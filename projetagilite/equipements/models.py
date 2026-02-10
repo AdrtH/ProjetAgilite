@@ -12,9 +12,9 @@ class Product(models.Model):
     name = models.TextField()
 
 class SportProductRelation(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="sports")
     sport = models.TextField(choices=Sport)
 
 class SportLevelProductRelation(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="levels")
     level = models.TextField(choices=SportLevel)
