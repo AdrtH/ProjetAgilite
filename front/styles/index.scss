@@ -1,9 +1,9 @@
 @use "tailwindcss";
 
 :root {
-  /* Dutch white (valid hex form) */
-  --color-primary: #efdfbb;
-  --color-secondary: #722f37;
+  --color-primary: #722f37;
+  /* Dutch white from README normalized to valid hex */
+  --color-secondary: #efdfbb;
 }
 
 body {
