@@ -1,12 +1,20 @@
 from django.db import models
 
 class Sport(models.TextChoices):
-    BADMINTON = "BAD", ("BADMINTON")
+    BADMINTON = "BAD", "Badminton"
+
+class SportLevel(models.TextChoices):
+    BEGINNER = "BEGINNER", "Débutant"
+    AVERAGE = "AVERAGE", "Intermediaire"
+    EXPERT = "EXPERT", "Expert"
 
 class Product(models.Model):    
     name = models.TextField()
-#    sport_name = models.TextField(choices=Sport)
 
-class SportsOfProduct(models.Model):
+class SportProductRelation(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    sport_name = models.TextField(choices=Sport)
+    sport = models.TextField(choices=Sport)
+
+class SportLevelProductRelation(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    level = models.TextField(choices=SportLevel)
