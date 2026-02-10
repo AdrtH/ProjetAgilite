@@ -1,1 +1,14 @@
 @use "tailwindcss";
+
+:root {
+  /* Dutch white (valid hex form) */
+  --color-primary: #efdfbb;
+  --color-secondary: #722f37;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: var(--color-primary);
+  color: var(--color-secondary);
+}
