@@ -15,6 +15,9 @@
 *::before,
 *::after {
   box-sizing: border-box;
+  --color-primary: #722f37;
+  /* Dutch white from README normalized to valid hex */
+  --color-secondary: #efdfbb;
 }
 
 body {
