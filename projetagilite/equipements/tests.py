@@ -7,9 +7,9 @@ from equipements.models import SportModel, Sport, NiveauSportif
 
 class UserModelTest(TestCase):
     def test_create_user_with_niveau_sportif(self):
-        User = get_user_model()
+        userModel = get_user_model()
 
-        user = User.objects.create_user(
+        user = userModel.objects.create_user(
             username="alice",
             password="test1234",
             niveauSportif=NiveauSportif.CONFIRME
@@ -18,9 +18,9 @@ class UserModelTest(TestCase):
         self.assertEqual(user.niveauSportif, NiveauSportif.CONFIRME)
 
     def test_default_niveau_sportif(self):
-        User = get_user_model()
+        userModel = get_user_model()
 
-        user = User.objects.create_user(
+        user = userModel.objects.create_user(
             username="bob",
             password="test1234"
         )
@@ -28,12 +28,12 @@ class UserModelTest(TestCase):
         self.assertEqual(user.niveauSportif, NiveauSportif.DEBUTANT)
 
     def test_user_can_have_multiple_sports(self):
-        User = get_user_model()
+        userModel = get_user_model()
 
         football = SportModel.objects.create(code=Sport.FOOTBALL)
         tennis = SportModel.objects.create(code=Sport.TENNIS)
 
-        user = User.objects.create_user(
+        user = userModel.objects.create_user(
             username="charlie",
             password="test1234"
         )
