@@ -1,7 +1,20 @@
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 
-const normalizedPath = window.location.pathname.replace(/\/+$/, "") || "/";
+const normalizePath = (path: string): string => {
+  if (path === "/") {
+    return "/";
+  }
+
+  let end = path.length;
+  while (end > 1 && path.charCodeAt(end - 1) === 47) {
+    end -= 1;
+  }
+
+  return path.slice(0, end);
+};
+
+const normalizedPath = normalizePath(window.location.pathname);
 
 export default function App() {
   if (normalizedPath === "/login") {
