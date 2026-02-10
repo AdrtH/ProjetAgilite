@@ -22,11 +22,23 @@ export default function App() {
     typeof window !== "undefined" ? normalizePath(window.location.pathname) : "/";
 
   if (pathname === "/login") {
-    return <LoginPage />;
+    return (
+      <div className="min-h-screen [background:var(--color-secondary)]">
+        <Header />
+        <LoginPage />
+        <Footer />
+      </div>
+    );
   }
 
   if (pathname === "/register") {
-    return <RegisterPage />;
+    return (
+      <div className="min-h-screen [background:var(--color-secondary)]">
+        <Header />
+        <RegisterPage />
+        <Footer />
+      </div>
+    );
   }
 
   const knownRoutes = new Set(["/"]);
