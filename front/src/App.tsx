@@ -1,4 +1,17 @@
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+
+const normalizedPath = window.location.pathname.replace(/\/+$/, "") || "/";
+
 export default function App() {
+  if (normalizedPath === "/login") {
+    return <LoginPage />;
+  }
+
+  if (normalizedPath === "/register") {
+    return <RegisterPage />;
+  }
+
   return (
     <div className="min-h-screen p-6">
       <h1 className="text-3xl font-bold [color:var(--color-secondary)]">
