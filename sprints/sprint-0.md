@@ -34,4 +34,31 @@ Front:
     - Setup de Vite  
 
 ## Fin de sprint
-TBD
+Démo: pas faites par manque de fonctionnalités
+Rétrospectif:
+Theo (PO):
+    - Positif: Bonne répartition des taches et responsabilités  
+    - Négatif: Le flux tendu car début de projet
+
+Astrée (Back):
+    - Positif: Bonne communication dans l'équipe
+    - Negatif: Difficulté à la découverte de Django
+
+Jean Baptiste (Back):
+    - Positif: Bon esprit d'équipe
+    - Negatif: Difficulté à la découverte de Django
+
+Quentin (Front):
+    - Positif: Bon teambuilding
+    - Negatif: Manque de tache au début car rédaction des US
+
+Tom (Front):
+    - Positif: Bonne cohésion entre les différents membres
+    - Negatif: Trop de temps passé en conception
+
+Adrien (SM):
+    - Positif: Rapidité à setup le projet
+    - Négatif: Orcherstration de l'équipe un peu trop chronophage
+
+Action pour le prochain sprint: Meilleur guidage sur les technologies afin d'avoir un squelette de projet fonctionnel et des premières fonctionnalités prêtes.
+
