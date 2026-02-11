@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
-from equipements.models import Product
+from equipements.models import Product, Sport
 from ninja import NinjaAPI
 
 api = NinjaAPI()
@@ -21,3 +21,14 @@ def get_product(request):
     ]
     return JsonResponse(result, safe=False)
 
+#Récupère tous les sports
+@api.get("/sports")
+def get_sport(request):
+    result = [
+        {
+            "key": sport[0],
+            "name": sport[1]
+        }
+        for sport in Sport.choices
+    ]
+    return JsonResponse(result, safe=False)
