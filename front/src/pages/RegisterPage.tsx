@@ -29,6 +29,7 @@ export default function RegisterPage() {
 
   const submitRegistration = async () => {
     let response: Response;
+
     try {
       response = await fetch("/api/register", {
         method: "POST",
@@ -180,6 +181,7 @@ export default function RegisterPage() {
             {errorMessage ? (
               <p className="text-xs font-bold text-red-700">{errorMessage}</p>
             ) : null}
+
             <button
               className="mt-1 rounded-xl bg-[var(--color-primary)] px-4 py-3 font-bold text-[var(--color-secondary)] transition active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
               type="submit"
