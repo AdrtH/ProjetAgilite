@@ -41,13 +41,15 @@ class Product(models.Model):
         super().save(*args, **kwargs)
 
 class ProductSports(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="sports")
+    pk = models.CompositePrimaryKey("product_id", "sport")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
     sport = models.CharField(max_length=50, choices=Sport.choices)
 
     class Meta:
         unique_together = (('product', 'sport'),)
 
 class ProductLevels(models.Model):
+    pk = models.CompositePrimaryKey("product_id", "level")    
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="levels")
     level = models.CharField(max_length=10, choices=SportLevel.choices)
 
@@ -55,6 +57,7 @@ class ProductLevels(models.Model):
         unique_together = (('product', 'level'),)
 
 class ProductFeatures(models.Model):
+    pk = models.CompositePrimaryKey("product_id", "position")        
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="features")
     position = models.IntegerField()
     feature = models.TextField()
@@ -63,6 +66,7 @@ class ProductFeatures(models.Model):
         unique_together = (('product', 'position'),)
 
 class ProductImages(models.Model):
+    pk = models.CompositePrimaryKey("product_id", "position")            
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="images")
     position = models.IntegerField()
     image_url = models.URLField()
@@ -72,6 +76,7 @@ class ProductImages(models.Model):
         unique_together = (('product', 'position'),)
 
 class ProductStoreStock(models.Model):
+    pk = models.CompositePrimaryKey("product_id", "store_name")            
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="store_stock")
     store_name = models.CharField(max_length=100)
     stock = models.IntegerField()
