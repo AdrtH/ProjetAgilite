@@ -1,6 +1,6 @@
 from django.test import TestCase, Client
 from django.urls import reverse
-from equipements.models import Product, SportLevelProductRelation, SportProductRelation, SportLevel, Sport
+from equipements.models import Product, ProductLevels, ProductSports, SportLevel, Sport
 from equipements.views import get_product
 import json
 from django.contrib.auth import get_user_model
@@ -13,54 +13,60 @@ class ProductModelTest(TestCase):
 
     def test_create_product_with_all_fields(self):
         product = Product.objects.create(
+            id="laptop",
             name="Laptop",
             price=999.99,
-            image="https://example.com/image.jpg"
+            card_image="https://example.com/card_image.jpg"
         )
         self.assertEqual(product.name, "Laptop")
         self.assertEqual(product.price, 999.99)
-        self.assertEqual(product.image, "https://example.com/image.jpg")
+        self.assertEqual(product.card_image, "https://example.com/card_image.jpg")
 
     def test_create_product_with_missing_price(self):
         product = Product.objects.create(
+            id="laptop",            
             name="Laptop",
-            image="https://example.com/image.jpg"
+            card_image="https://example.com/card_image.jpg"
         )
         self.assertEqual(product.name, "Laptop")
         self.assertEqual(product.price, 0.00)  # Default price
-        self.assertEqual(product.image, "https://example.com/image.jpg")
+        self.assertEqual(product.card_image, "https://example.com/card_image.jpg")
 
     def test_create_product_with_missing_name(self):
         with self.assertRaises(ValidationError):
             product = Product.objects.create(
+                id="laptop",
                 price=999.99,
-                image="https://example.com/image.jpg"
+                card_image="https://example.com/card_image.jpg"
             )
             product.full_clean()  # Trigger validation
 
-    def test_create_product_with_missing_image_url(self):
+    def test_create_product_with_missing_card_image_url(self):
         product = Product.objects.create(
+            id="Mouse",
             name="Mouse",
             price=29.90
         )
-        self.assertEqual(product.image, None)
+        self.assertEqual(product.card_image, None)
 
     def test_create_product_with_invalid_price(self):
         product = Product(
+            id="laptop",
             name="Laptop",
             price=-10.00,
-            image="https://example.com/image.jpg"
+            card_image="https://example.com/card_image.jpg"
         )
 
         with self.assertRaises(ValidationError):
             product.full_clean()
     
-    def test_create_product_with_invalid_image_url(self):
+    def test_create_product_with_invalid_card_image_url(self):
         with self.assertRaises(ValidationError):
             product = Product.objects.create(
+                id="laptop",
                 name="Laptop",
                 price=999.99,
-                image="not-a-valid-url"  # Invalid URL
+                card_image="not-a-valid-url"  # Invalid URL
             )
             product.full_clean()  # Trigger validation
 
@@ -70,30 +76,30 @@ class TestGetProduct(TestCase):
     def setUp(cls):
         cls.client = Client()
         
-        chaussure = Product.objects.create(name="chaussure")
-        raquette = Product.objects.create(name="raquette")
+        chaussure = Product.objects.create(id="1", name="chaussure")
+        raquette = Product.objects.create(id="2", name="raquette")
 
-        SportProductRelation.objects.create(product=chaussure, sport="BADMINTON")
-        SportProductRelation.objects.create(product=raquette, sport="BADMINTON")
+        ProductSports.objects.create(product=chaussure, sport="BADMINTON")
+        ProductSports.objects.create(product=raquette, sport="BADMINTON")
         
-        SportLevelProductRelation.objects.create(product=chaussure, level="BEGINNER")
-        SportLevelProductRelation.objects.create(product=chaussure, level="AVERAGE")
-        SportLevelProductRelation.objects.create(product=chaussure, level="EXPERT")
+        ProductLevels.objects.create(product=chaussure, level="BEGINNER")
+        ProductLevels.objects.create(product=chaussure, level="AVERAGE")
+        ProductLevels.objects.create(product=chaussure, level="EXPERT")
         
-        SportLevelProductRelation.objects.create(product=raquette, level="AVERAGE")
+        ProductLevels.objects.create(product=raquette, level="AVERAGE")
 
     def test_get_all_products(self):
         response = self.client.get("/products")
         json_response = json.loads(response.content.decode("utf-8"))
         self.assertEqual([
             {
-                "id": 1,
-                "levels": ["BEGINNER", "AVERAGE", "EXPERT"],
+                "id": "1",
+                "levels": ["AVERAGE", "BEGINNER", "EXPERT"],
                 "sports": ["BADMINTON"],
                 "name": "chaussure"
             },
             {
-                "id": 2,
+                "id": "2",
                 "levels": ["AVERAGE"],
                 "sports": ["BADMINTON"],
                 "name": "raquette"
@@ -101,27 +107,27 @@ class TestGetProduct(TestCase):
         ], json_response)
 
     def test_adding_product(self):
-        volant = Product.objects.create(name="volant")
-        SportProductRelation.objects.create(product=volant, sport="BADMINTON")
-        SportLevelProductRelation.objects.create(product=volant, level="BEGINNER")
+        volant = Product.objects.create(id="3", name="volant")
+        ProductSports.objects.create(product=volant, sport="BADMINTON")
+        ProductLevels.objects.create(product=volant, level="BEGINNER")
         
         response = self.client.get("/products")
         json_response = json.loads(response.content.decode("utf-8"))
         self.assertEqual([
             {
-                "id": 1,
-                "levels": ["BEGINNER", "AVERAGE", "EXPERT"],
+                "id": "1",
+                "levels": ["AVERAGE", "BEGINNER", "EXPERT"],
                 "sports": ["BADMINTON"],
                 "name": "chaussure"
             },
             {
-                "id": 2,
+                "id": "2",
                 "levels": ["AVERAGE"],
                 "sports": ["BADMINTON"],
                 "name": "raquette"
             },
             {
-                "id": 3,
+                "id": "3",
                 "levels": ["BEGINNER"],
                 "sports": ["BADMINTON"],
                 "name": "volant"
