@@ -1,0 +1,26 @@
+@use "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700&display=swap");
+
+:root {
+  --color-primary: #722f37;
+  --color-secondary: #efdfbb;
+  --color-primary-rgb: 114 47 55;
+  --color-secondary-rgb: 239 223 187;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Manrope", "Segoe UI", Tahoma, sans-serif;
+  background:
+    radial-gradient(900px 480px at 100% -10%, rgb(var(--color-secondary-rgb) / 20%), transparent 60%),
+    radial-gradient(760px 420px at -5% 90%, rgb(var(--color-secondary-rgb) / 18%), transparent 58%),
+    linear-gradient(170deg, #f5e7c9 0%, var(--color-primary) 45%, #f7ecd6 100%);
+  color: var(--color-secondary);
+}
