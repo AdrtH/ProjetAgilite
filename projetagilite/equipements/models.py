@@ -5,6 +5,7 @@ from django.contrib.auth.models import AbstractUser
 
 class Sport(models.TextChoices):
     BADMINTON = "BAD", "Badminton"
+    BASKETBALL = "BASKET", "Basketball"
 
 class SportLevel(models.TextChoices):
     BEGINNER = "BEGINNER", "Débutant"
