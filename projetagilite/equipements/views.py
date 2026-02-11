@@ -47,4 +47,5 @@ def post_register(request,payload:UserInput):
         if payload.name==i.username:
             return JsonResponse({'error': 'Utilisateur existant'}, status=400)
     nouvel_user = User.objects.create(username=payload.name,sportsPratique=payload.sport,niveauSportif=payload.niveauSportif,password=payload.password)
-    return "success"
+    return 'success'
+()

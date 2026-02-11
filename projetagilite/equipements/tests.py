@@ -164,18 +164,28 @@ class TestGetSports(TestCase):
         ], json_response)
 
 class TestPostRegister(TestCase):
-    def test_postregister_with_json(self):
-            """Test avec content-type JSON explicite"""
-            new_user = {
-                'name': 'gougou_json',
-                'password': 'gagak',
-                'sport': 'BADMINTON',
-                'niveau': 'average'
-            }
-            
-            response = self.client.post('/register', 
-                                    data=json.dumps(new_user),
-                                    content_type='application/json')
-            
-            self.assertEqual(User.objects.count(), 1)
-            self.assertEqual(response.status_code, 200)
+
+    def test_register_new_user(self):
+        response = self.client.post("/register", json.dumps({
+            "name": "charlie",
+            "password": "test1234",
+            "sport": "BADMINTON",
+            "niveauSportif": "AVERAGE"
+        }), content_type="application/json")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content.decode("utf-8"), '"success"')
+        self.assertTrue(User.objects.filter(username="charlie").exists())
+
+    def test_register_existing_user(self):
+        User.objects.create_user(username="dave", password="test1234")
+
+        response = self.client.post("/register", json.dumps({
+            "name": "dave",
+            "password": "test1234",
+            "sport": "BADMINTON",
+            "niveauSportif": "AVERAGE"
+        }), content_type="application/json")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {'error': 'Utilisateur existant'})
