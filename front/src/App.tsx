@@ -13,7 +13,7 @@ const normalizePath = (path: string): string => {
   }
 
   let end = path.length;
-  while (end > 1 && path.charCodeAt(end - 1) === 47) {
+  while (end > 1 && path.codePointAt(end - 1) === 47) {
     end -= 1;
   }
 
@@ -21,8 +21,7 @@ const normalizePath = (path: string): string => {
 };
 
 export default function App() {
-  const pathname =
-    typeof window !== "undefined" ? normalizePath(window.location.pathname) : "/";
+  const pathname = normalizePath(globalThis.window?.location.pathname ?? "/");
 
   if (pathname === "/login") {
     return (
@@ -49,6 +48,11 @@ export default function App() {
       <div className="min-h-screen [background:var(--color-secondary)]">
         <Header />
         <ProfilePage />
+        <Footer />
+      </div>
+    );
+  }
+
   if (pathname === "/products") {
     return (
       <div className="min-h-screen [background:var(--color-secondary)]">
