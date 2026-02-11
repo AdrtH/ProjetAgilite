@@ -5,7 +5,7 @@ from equipements.views import get_product
 import json
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from equipements.models import Product
+from equipements.models import Product,User
 
 # Create your tests here.
 
@@ -163,3 +163,19 @@ class TestGetSports(TestCase):
             }
         ], json_response)
 
+class TestPostRegister(TestCase):
+    def test_postregister_with_json(self):
+            """Test avec content-type JSON explicite"""
+            new_user = {
+                'name': 'gougou_json',
+                'password': 'gagak',
+                'sport': 'BADMINTON',
+                'niveau': 'average'
+            }
+            
+            response = self.client.post('/register', 
+                                    data=json.dumps(new_user),
+                                    content_type='application/json')
+            
+            self.assertEqual(User.objects.count(), 1)
+            self.assertEqual(response.status_code, 200)
