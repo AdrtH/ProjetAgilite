@@ -5,7 +5,7 @@ from equipements.views import get_product
 import json
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from equipements.models import Product
+from equipements.models import Product,User
 
 # Create your tests here.
 
@@ -169,3 +169,29 @@ class TestGetSports(TestCase):
             }
         ], json_response)
 
+class TestPostRegister(TestCase):
+
+    def test_register_new_user(self):
+        response = self.client.post("/register", json.dumps({
+            "name": "charlie",
+            "password": "test1234",
+            "sport": "BADMINTON",
+            "niveauSportif": "AVERAGE"
+        }), content_type="application/json")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content.decode("utf-8"), '"success"')
+        self.assertTrue(User.objects.filter(username="charlie").exists())
+
+    def test_register_existing_user(self):
+        User.objects.create_user(username="dave", password="test1234")
+
+        response = self.client.post("/register", json.dumps({
+            "name": "dave",
+            "password": "test1234",
+            "sport": "BADMINTON",
+            "niveauSportif": "AVERAGE"
+        }), content_type="application/json")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {'error': 'Utilisateur existant'})
