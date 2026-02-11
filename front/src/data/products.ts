@@ -1,6 +1,4 @@
 export type Product = {
-  brand: string;
-  sku: string;
   id: string;
   category: string;
   sports: string[];
@@ -8,38 +6,10 @@ export type Product = {
   name: string;
   description: string;
   price: number;
-  rating: number;
-  reviewCount: number;
-  warrantyMonths: number;
-  deliveryDays: number;
-  features: string[];
-  cardImage: string;
-  galleryImages: string[];
-  stockByStore: Array<{
-    store: string;
-    stock: number;
-  }>;
-  inStock: boolean;
-  stockCount: number;
+  images: string[];
 };
 
-type ProductSeed = Omit<
-  Product,
-  | "brand"
-  | "sku"
-  | "rating"
-  | "reviewCount"
-  | "warrantyMonths"
-  | "deliveryDays"
-  | "features"
-  | "cardImage"
-  | "galleryImages"
-  | "stockByStore"
-  | "inStock"
-  | "stockCount"
->;
-
-const seededProducts: ProductSeed[] = [
+const seededProducts: Omit<Product, "images">[] = [
   {
     id: "p-bad-001",
     category: "CHAUSSURES",
@@ -232,71 +202,18 @@ const seededProducts: ProductSeed[] = [
   },
 ];
 
-const stockPattern = [0, 12, 6, 20, 3, 0, 8, 14, 5, 2, 0, 11, 9, 4, 1, 0, 7, 15, 10];
-const brands = ["Aptonia", "Kalenji", "Kipsta", "Domyos", "Artengo", "Btwin", "Nabaiji"];
-const deliveryPattern = [1, 2, 3, 2, 4, 1, 3, 2];
-const reviewPattern = [18, 42, 65, 27, 103, 11, 54, 89, 34, 22];
-const ratingPattern = [4.6, 4.4, 4.8, 4.3, 4.7, 4.1, 4.5, 4.2];
-const warrantyPattern = [12, 24, 12, 24, 36];
-const storeNames = [
-  "Decathlon Lille",
-  "Decathlon Paris Madeleine",
-  "Decathlon Lyon Part-Dieu",
-  "Decathlon Bordeaux Lac",
-];
-
-const featureByCategory: Record<string, string[]> = {
-  CHAUSSURES: ["Respirabilite", "Amorti", "Maintien lateral"],
-  MATERIEL: ["Robustesse", "Performance", "Confort d'utilisation"],
-  TEXTILE: ["Respirant", "Leger", "Séchage rapide"],
-  ACCESSOIRES: ["Pratique", "Compact", "Polyvalent"],
-  PROTECTION: ["Protection ciblee", "Confort", "Maintien"],
-};
-
 const productImageModules = import.meta.glob("../assets/products/*.{png,jpg,jpeg,webp,avif}", {
   eager: true,
   import: "default",
 }) as Record<string, string>;
 
-export const mockProducts: Product[] = seededProducts.map((product, index) => {
-  const stockCount = stockPattern[index % stockPattern.length];
-  const features = featureByCategory[product.category] ?? ["Confort", "Durabilite", "Polyvalence"];
-  const storeStockParts = splitStock(stockCount, storeNames.length, index);
-  const galleryImages = getImagesForProduct(product.id);
-
-  return {
-    ...product,
-    brand: brands[index % brands.length],
-    sku: `REF-${product.id.toUpperCase()}`,
-    rating: ratingPattern[index % ratingPattern.length],
-    reviewCount: reviewPattern[index % reviewPattern.length],
-    warrantyMonths: warrantyPattern[index % warrantyPattern.length],
-    deliveryDays: deliveryPattern[index % deliveryPattern.length],
-    features,
-    cardImage: galleryImages[0] ?? "",
-    galleryImages,
-    stockByStore: storeNames.map((store, storeIndex) => ({
-      store,
-      stock: storeStockParts[storeIndex],
-    })),
-    inStock: stockCount > 0,
-    stockCount,
-  };
-});
+export const mockProducts: Product[] = seededProducts.map((product) => ({
+  ...product,
+  images: getImagesForProduct(product.id),
+}));
 
 export const getProductById = (id: string): Product | undefined =>
   mockProducts.find((product) => product.id === id);
-
-function splitStock(total: number, parts: number, seed: number): number[] {
-  const distribution = new Array<number>(parts).fill(0);
-
-  for (let index = 0; index < total; index += 1) {
-    const slot = (seed + index) % parts;
-    distribution[slot] += 1;
-  }
-
-  return distribution;
-}
 
 function getImagesForProduct(productId: string): string[] {
   return Object.entries(productImageModules)
