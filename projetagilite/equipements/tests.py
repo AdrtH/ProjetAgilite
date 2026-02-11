@@ -1,8 +1,9 @@
 from django.test import TestCase, Client
 from django.urls import reverse
-from equipements.models import Product, SportLevelProductRelation, SportProductRelation
+from equipements.models import Product, SportLevelProductRelation, SportProductRelation, SportLevel, Sport
 from equipements.views import get_product
 import json
+from django.contrib.auth import get_user_model
 
 # Create your tests here.
 class TestGetProduct(TestCase):
@@ -63,3 +64,28 @@ class TestGetProduct(TestCase):
                 "name": "volant"
             }
         ], json_response)
+
+class UserModelTest(TestCase):
+    def test_create_user_with_niveau_sportif(self):
+        userModel = get_user_model()
+
+        user = userModel.objects.create_user(
+            username="alice",
+            password="test1234",
+            niveauSportif=SportLevel.AVERAGE,
+            sportsPratique=Sport.BADMINTON
+        )
+
+        self.assertEqual(user.niveauSportif, SportLevel.AVERAGE)
+
+    def test_default_niveau_sportif(self):
+        userModel = get_user_model()
+
+        user = userModel.objects.create_user(
+            username="bob",
+            password="test1234"
+        )
+
+        self.assertEqual(user.niveauSportif, SportLevel.BEGINNER)
+
+
