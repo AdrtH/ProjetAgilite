@@ -49,6 +49,11 @@ export default function App() {
       <div className="min-h-screen [background:var(--color-secondary)]">
         <Header />
         <ProfilePage />
+        <Footer />
+      </div>
+    );
+  }
+
   if (pathname === "/products") {
     return (
       <div className="min-h-screen [background:var(--color-secondary)]">
