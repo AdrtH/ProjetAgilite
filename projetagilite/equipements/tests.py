@@ -96,7 +96,7 @@ class UserModelTest(TestCase):
 
 class TestGetSports(TestCase):
     def test_get_all_sports(self):
-        response = self.client.get("/sports/")
+        response = self.client.get("/sports")
         json_response = json.loads(response.content.decode('utf-8'))
         self.assertEqual([
             {
