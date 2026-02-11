@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+
 const highlights = [
   "Retrouvez vos recommandations d'équipement personnalisées.",
   "Suivez votre profil sportif et vos budgets enregistrés.",
@@ -5,11 +7,34 @@ const highlights = [
 ];
 
 export default function LoginPage() {
+  const [notice, setNotice] = useState("");
+
+  useEffect(() => {
+    const flashNotice = sessionStorage.getItem("auth_notice");
+    if (!flashNotice) {
+      return;
+    }
+
+    setNotice(flashNotice);
+    sessionStorage.removeItem("auth_notice");
+
+    const timeoutId = window.setTimeout(() => {
+      setNotice("");
+    }, 3000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, []);
+
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8 md:px-6 md:py-12">
-      <div className="grid overflow-hidden rounded-[32px] border border-[var(--color-primary)] shadow-sm lg:grid-cols-[1.05fr_1fr]">
-        <section className="flex flex-col justify-center gap-5 bg-[var(--color-primary)] px-6 py-8 text-[var(--color-secondary)] md:px-10 md:py-10">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] [color:var(--color-secondary)]">
+      {notice ? (
+        <div className="fixed right-4 top-4 z-50 rounded-xl border border-emerald-700/30 bg-emerald-100 px-4 py-3 text-sm font-bold text-emerald-900 shadow-lg">
+          {notice}
+        </div>
+      ) : null}
+      <div className="grid overflow-hidden rounded-[32px] border border-[#722F37]/20 shadow-[0_28px_80px_rgba(114,47,55,0.22)] lg:grid-cols-[1.05fr_1fr]">
+        <section className="flex flex-col justify-center gap-5 bg-gradient-to-br from-[#722F37] via-[#672A32] to-[#5A2229] px-6 py-8 text-[#EFDFBB] md:px-10 md:py-10">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#EFDFBB]/85">
             Le Compagnon d&apos;Équipement
           </p>
           <h1 className="max-w-[13ch] text-3xl leading-tight [font-family:'Decathlon Sans','Segoe UI',Tahoma,sans-serif] md:text-4xl">
