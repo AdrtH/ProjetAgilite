@@ -2,6 +2,7 @@ import Footer from "./components/Footer";
 import Header from "./components/Header";
 import NotFoundPage from "./components/NotFoundPage";
 import LoginPage from "./pages/LoginPage";
+import ProfilePage from "./pages/ProfilePage";
 import RegisterPage from "./pages/RegisterPage";
 
 const normalizePath = (path: string): string => {
@@ -36,6 +37,16 @@ export default function App() {
       <div className="min-h-screen [background:var(--color-secondary)]">
         <Header />
         <RegisterPage />
+        <Footer />
+      </div>
+    );
+  }
+
+  if (pathname === "/profil") {
+    return (
+      <div className="min-h-screen [background:var(--color-secondary)]">
+        <Header />
+        <ProfilePage />
         <Footer />
       </div>
     );
