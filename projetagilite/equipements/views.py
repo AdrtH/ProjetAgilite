@@ -1,10 +1,16 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
-from equipements.models import Product, Sport
-from ninja import NinjaAPI
+from equipements.models import Product, Sport,User
+from ninja import NinjaAPI,Schema
 
 api = NinjaAPI()
+
+class UserInput(Schema):
+    name :str
+    password:str
+    sport:str
+    niveauSportif:str
 
 # Create your views here.
 @api.get("/products")
@@ -45,3 +51,14 @@ def get_sport(request):
         for sport in Sport.choices
     ]
     return JsonResponse(result, safe=False)
+
+@api.post("/register")
+def post_register(request,payload:UserInput):
+
+    known_user= User.objects.all()
+    for i in known_user:
+        if payload.name==i.username:
+            return JsonResponse({'error': 'Utilisateur existant'}, status=400)
+    nouvel_user = User.objects.create(username=payload.name,sportsPratique=payload.sport,niveauSportif=payload.niveauSportif,password=payload.password)
+    return 'success'
+
