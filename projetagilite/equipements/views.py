@@ -34,7 +34,7 @@ def get_product(request, sport:str = None, level:str = None, minPrice:int = None
             "levels": list(product.levels.values_list("level", flat=True)),
             "name": product.name,
             "price": product.price,
-            "image": product.image,
+            "card_image": product.card_image,
         }
         for product in products
     ]
