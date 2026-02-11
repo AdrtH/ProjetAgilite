@@ -2,6 +2,7 @@ import Footer from "./components/Footer";
 import Header from "./components/Header";
 import NotFoundPage from "./components/NotFoundPage";
 import LoginPage from "./pages/LoginPage";
+import ProfilePage from "./pages/ProfilePage";
 import ProductDetailsPage from "./pages/ProductDetailsPage";
 import ProductsPage from "./pages/ProductsPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -43,6 +44,11 @@ export default function App() {
     );
   }
 
+  if (pathname === "/profil") {
+    return (
+      <div className="min-h-screen [background:var(--color-secondary)]">
+        <Header />
+        <ProfilePage />
   if (pathname === "/products") {
     return (
       <div className="min-h-screen [background:var(--color-secondary)]">
