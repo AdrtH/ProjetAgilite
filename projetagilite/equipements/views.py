@@ -22,8 +22,8 @@ def get_product(_request):
 def get_sport(_request):
     result = [
         {
-            "sport_key": sport[0],
-            "sport_name": sport[1]
+            "key": sport[0],
+            "name": sport[1]
         }
         for sport in Sport.choices
     ]

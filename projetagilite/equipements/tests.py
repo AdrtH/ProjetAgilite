@@ -89,3 +89,13 @@ class UserModelTest(TestCase):
         self.assertEqual(user.niveauSportif, SportLevel.BEGINNER)
 
 
+class TestGetSports(TestCase):
+    def test_get_all_sports(self):
+        response = self.client.get("/sports/")
+        json_response = json.loads(response.content.decode('utf-8'))
+        self.assertEqual([
+            {
+                "key": "BAD",
+                "name": "Badminton"
+            }
+        ], json_response)
