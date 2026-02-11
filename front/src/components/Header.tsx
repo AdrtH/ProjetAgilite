@@ -1,6 +1,29 @@
+import { useEffect, useRef } from "react";
+
 export default function Header() {
   const searchParams = new URLSearchParams(globalThis.window?.location.search ?? "");
   const currentQuery = searchParams.get("q")?.trim() ?? "";
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const searchInput = searchInputRef.current;
+
+    if (!searchInput) {
+      return;
+    }
+
+    const handleSearch = () => {
+      if (searchInput.value.trim() === "") {
+        searchInput.form?.requestSubmit();
+      }
+    };
+
+    searchInput.addEventListener("search", handleSearch);
+
+    return () => {
+      searchInput.removeEventListener("search", handleSearch);
+    };
+  }, []);
 
   return (
     <header className="sticky top-0 z-20 border-b border-[var(--color-primary)] bg-[var(--color-secondary)] backdrop-blur">
@@ -19,6 +42,7 @@ export default function Header() {
         >
           <div className="flex items-center gap-2 rounded-full border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-1.5">
             <input
+              ref={searchInputRef}
               type="search"
               name="q"
               autoComplete="off"

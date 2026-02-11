@@ -27,11 +27,6 @@ const allLevels = Array.from(
   new Set(mockProducts.flatMap((product) => product.levels)),
 );
 
-const formatTitle = (value: string): string => {
-  if (!value) return value;
-  return value.charAt(0).toUpperCase() + value.slice(1);
-};
-
 export default function ProductsPage() {
   const [query, setQuery] = useState(() => {
     const searchParams = new URLSearchParams(globalThis.window?.location.search ?? "");
@@ -298,10 +293,10 @@ export default function ProductsPage() {
                       href={`/product/${product.id}`}
                       className="group block rounded-2xl border border-[var(--color-primary)] bg-[var(--color-secondary)] p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-[var(--color-primary)] hover:shadow-lg focus-visible:-translate-y-1 focus-visible:border-[var(--color-primary)] focus-visible:shadow-lg focus-visible:outline-none"
                     >
-                      {product.cardImage ? (
+                      {product.images[0] ? (
                         <div className="-mx-2 -mt-2 mb-4 overflow-hidden rounded-xl">
                           <img
-                            src={product.cardImage}
+                            src={product.images[0]}
                             alt={product.name}
                             loading="lazy"
                             className="aspect-[4/3] w-full object-cover transition duration-300 group-hover:scale-[1.03]"
@@ -314,62 +309,53 @@ export default function ProductsPage() {
                       )}
 
                       <div className="flex items-start justify-between gap-3">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="rounded-full border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-1 text-xs font-bold uppercase tracking-wide text-[var(--color-primary)]">
-                            {categoryLabelMap[product.category] ?? product.category}
-                          </span>
-                          <StockChip inStock={product.inStock} />
-                        </div>
-                        <p className="text-lg font-black text-[var(--color-primary)]">{formatPrice(product.price)}</p>
+                        <span className="rounded-full border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-1 text-xs font-bold uppercase tracking-wide text-[var(--color-primary)]">
+                          {categoryLabelMap[product.category] ?? product.category}
+                        </span>
+                        <p className="rounded-[2px] bg-[#f2e933] px-2 py-1 text-lg font-black leading-none text-black">
+                          {formatPrice(product.price)}
+                        </p>
                       </div>
 
                       <h2 className="mt-3 text-2xl leading-tight text-[var(--color-primary)] [font-family:'Decathlon Sans','Segoe UI',Tahoma,sans-serif]">
-                        {formatTitle(product.name)}
+                        {product.name}
                       </h2>
                       <p className="mt-2 text-sm leading-relaxed [color:var(--color-primary)]">
                         {product.description}
                       </p>
 
-                      <p className="mt-3 text-xs font-semibold uppercase tracking-wide [color:var(--color-primary)]">
-                        Sport principal:{" "}
-                        {selectedSport !== "ALL" && product.sports.includes(selectedSport)
-                          ? selectedSport
-                          : product.sports[0]}
-                      </p>
-
-                      <div className="mt-3 grid gap-3">
-                        <div>
-                          <p className="text-[11px] font-semibold uppercase tracking-wide [color:var(--color-primary)]">
-                            Sports concernes
-                          </p>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {product.sports.map((sport) => (
-                              <span
-                                key={`${product.id}-sport-${sport}`}
-                                className="rounded-full border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-1 text-xs font-semibold text-[var(--color-primary)]"
-                              >
-                                {sport}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div>
-                          <p className="text-[11px] font-semibold uppercase tracking-wide [color:var(--color-primary)]">
-                            Niveaux
-                          </p>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {product.levels.map((level) => (
-                              <span
-                                key={`${product.id}-level-${level}`}
-                                className="rounded-full bg-[var(--color-primary)] px-3 py-1 text-xs font-semibold text-[var(--color-secondary)]"
-                              >
-                                {levelLabelMap[level] ?? level}
-                              </span>
-                            ))}
-                          </div>
+                      <div className="mt-3">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide [color:var(--color-primary)]">
+                          Sports
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {product.sports.map((sport) => (
+                            <span
+                              key={`${product.id}-sport-${sport}`}
+                              className="rounded-full border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-1 text-xs font-semibold text-[var(--color-primary)]"
+                            >
+                              {sport}
+                            </span>
+                          ))}
                         </div>
                       </div>
+
+                      <div className="mt-3">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide [color:var(--color-primary)]">
+                          Niveaux
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {product.levels.map((level) => (
+                            <span
+                              key={`${product.id}-level-${level}`}
+                              className="rounded-full bg-[var(--color-primary)] px-3 py-1 text-xs font-semibold text-[var(--color-secondary)]"
+                            >
+                              {levelLabelMap[level] ?? level}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
                       <p className="mt-4 text-xs font-bold uppercase tracking-wide [color:var(--color-primary)] transition group-hover:text-[var(--color-primary)]">
                         Voir le detail produit
                       </p>
@@ -382,25 +368,6 @@ export default function ProductsPage() {
         </div>
       </section>
     </main>
-  );
-}
-
-type StockChipProps = Readonly<{
-  inStock: boolean;
-}>;
-
-function StockChip({ inStock }: StockChipProps) {
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${
-        inStock
-          ? "bg-green-100 text-green-700 ring-1 ring-green-300"
-          : "bg-red-100 text-red-700 ring-1 ring-red-300"
-      }`}
-    >
-      <span className={`h-1.5 w-1.5 rounded-full ${inStock ? "bg-green-500" : "bg-red-500"}`} />
-      {inStock ? "Stock" : "Rupture"}
-    </span>
   );
 }
 
