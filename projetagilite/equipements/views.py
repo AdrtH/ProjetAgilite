@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
-from equipements.models import Product
+from equipements.models import Product, Sport
 
 # Create your views here.
 @require_GET
@@ -17,3 +17,14 @@ def get_product(_request):
     ]
     return JsonResponse(result, safe=False)
 
+#Récupère tous les sports
+@require_GET
+def get_sport(_request):
+    result = [
+        {
+            "sport_key": sport[0],
+            "sport_name": sport[1]
+        }
+        for sport in Sport.choices
+    ]
+    return JsonResponse(result, safe=False)
