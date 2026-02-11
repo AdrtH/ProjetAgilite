@@ -1,6 +1,7 @@
 from django.test import TestCase, Client
 from django.urls import reverse
-from equipements.models import Product, SportLevelProductRelation, SportProductRelation, SportLevel, Sport
+from equipements.models import Product, SportLevelProductRelation, SportProductRelation, SportLevel, Sport, Stock
+from django.core.exceptions import ValidationError
 from equipements.views import get_product
 import json
 from django.contrib.auth import get_user_model
@@ -12,8 +13,8 @@ class TestGetProduct(TestCase):
     def setUp(cls):
         cls.client = Client()
         
-        chaussure = Product.objects.create(name="chaussure")
-        raquette = Product.objects.create(name="raquette")
+        chaussure = Product.objects.create(name="chaussure", price=50.00)
+        raquette = Product.objects.create(name="raquette", price=25.00)
 
         SportProductRelation.objects.create(product=chaussure, sport="BADMINTON")
         SportProductRelation.objects.create(product=raquette, sport="BADMINTON")
@@ -43,7 +44,7 @@ class TestGetProduct(TestCase):
         ], json_response)
 
     def test_adding_product(self):
-        volant = Product.objects.create(name="volant")
+        volant = Product.objects.create(name="volant", price=5.00)
         SportProductRelation.objects.create(product=volant, sport="BADMINTON")
         SportLevelProductRelation.objects.create(product=volant, level="BEGINNER")
         
@@ -92,5 +93,53 @@ class UserModelTest(TestCase):
         )
 
         self.assertEqual(user.niveauSportif, SportLevel.BEGINNER)
+
+class StockModelTest(TestCase):
+
+    def setUp(self):
+        self.product = Product.objects.create(
+            name="Bike",
+            price=1000.00
+        )
+
+    def test_create_stock_valid(self):
+        stock = Stock.objects.create(
+            product=self.product,
+            quantity=10
+        )
+        self.assertEqual(stock.quantity, 10)
+        self.assertEqual(stock.product, self.product)
+
+    def test_stock_quantity_cannot_be_negative(self):
+        stock = Stock(
+            product=self.product,
+            quantity=-5
+        )
+
+        with self.assertRaises(ValidationError):
+            stock.full_clean()
+
+    def test_stock_str_representation(self):
+        stock = Stock.objects.create(
+            product=self.product,
+            quantity=5
+        )
+        self.assertEqual(str(stock), "Bike - 5")
+
+    def test_stock_requires_product(self):
+        stock = Stock(quantity=5)
+
+        with self.assertRaises(ValidationError):
+            stock.full_clean()
+
+    def test_delete_product_cascades_to_stock(self):
+        stock = Stock.objects.create(
+            product=self.product,
+            quantity=5
+        )
+
+        self.product.delete()
+
+        self.assertEqual(Stock.objects.count(), 0)
 
 
