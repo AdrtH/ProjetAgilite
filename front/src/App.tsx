@@ -3,6 +3,8 @@ import Header from "./components/Header";
 import NotFoundPage from "./components/NotFoundPage";
 import LoginPage from "./pages/LoginPage";
 import ProfilePage from "./pages/ProfilePage";
+import ProductDetailsPage from "./pages/ProductDetailsPage";
+import ProductsPage from "./pages/ProductsPage";
 import RegisterPage from "./pages/RegisterPage";
 
 const normalizePath = (path: string): string => {
@@ -47,23 +49,44 @@ export default function App() {
       <div className="min-h-screen [background:var(--color-secondary)]">
         <Header />
         <ProfilePage />
+  if (pathname === "/products") {
+    return (
+      <div className="min-h-screen [background:var(--color-secondary)]">
+        <Header />
+        <ProductsPage />
         <Footer />
       </div>
     );
   }
 
-  const knownRoutes = new Set(["/"]);
+  if (pathname.startsWith("/product/") && pathname.length > "/product/".length) {
+    const productId = decodeURIComponent(pathname.slice("/product/".length));
+
+    return (
+      <div className="min-h-screen [background:var(--color-secondary)]">
+        <Header />
+        <ProductDetailsPage productId={productId} />
+        <Footer />
+      </div>
+    );
+  }
+
+  if (pathname.startsWith("/products/") && pathname.length > "/products/".length) {
+    const productId = decodeURIComponent(pathname.slice("/products/".length));
+
+    return (
+      <div className="min-h-screen [background:var(--color-secondary)]">
+        <Header />
+        <ProductDetailsPage productId={productId} />
+        <Footer />
+      </div>
+    );
+  }
+
+  const knownRoutes = new Set(["/", "/products"]);
   const isNotFound = !knownRoutes.has(pathname);
 
-  const isLoggedIn =
-    typeof window !== "undefined" &&
-    Boolean(
-      localStorage.getItem("authToken") ||
-        localStorage.getItem("token") ||
-        localStorage.getItem("accessToken"),
-    );
-
-  const searchHref = isLoggedIn ? "/search" : "/login";
+  const productsHref = "/products";
 
   return (
     <div className="min-h-screen [background:var(--color-secondary)]">
@@ -90,7 +113,7 @@ export default function App() {
               </p>
               <div className="mt-8 flex flex-wrap gap-4">
                 <a
-                  href={searchHref}
+                  href={productsHref}
                   className="rounded-full px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90 [background:var(--color-primary)]"
                 >
                   Rechercher un produit
@@ -132,7 +155,7 @@ export default function App() {
                 pertinents pour ta pratique sportive.
               </p>
               <a
-                href={searchHref}
+                href={productsHref}
                 className="mt-5 inline-block rounded-xl px-5 py-3 text-sm font-semibold text-white [background:var(--color-primary)]"
               >
                 Commencer une recherche
