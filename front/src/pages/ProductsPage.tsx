@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { mockProducts, type Product } from "../data/products";
 
 const levelLabelMap: Record<string, string> = {
@@ -17,6 +17,16 @@ const categoryLabelMap: Record<string, string> = {
 
 type SortOption = "relevance" | "price-asc" | "price-desc" | "name-asc";
 
+const allSports = Array.from(
+  new Set(mockProducts.flatMap((product) => product.sports)),
+).sort((left, right) => left.localeCompare(right, "fr"));
+const allCategories = Array.from(
+  new Set(mockProducts.map((product) => product.category)),
+).sort((left, right) => left.localeCompare(right, "fr"));
+const allLevels = Array.from(
+  new Set(mockProducts.flatMap((product) => product.levels)),
+);
+
 const formatTitle = (value: string): string => {
   if (!value) return value;
   return value.charAt(0).toUpperCase() + value.slice(1);
@@ -32,16 +42,48 @@ export default function ProductsPage() {
   const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>("relevance");
 
-  const sports = Array.from(
-    new Set(mockProducts.flatMap((product) => product.sports)),
-  ).sort((left, right) => left.localeCompare(right, "fr"));
-  const categories = Array.from(
-    new Set(mockProducts.map((product) => product.category)),
-  ).sort((left, right) => left.localeCompare(right, "fr"));
-  const levels = Array.from(
-    new Set(mockProducts.flatMap((product) => product.levels)),
-  );
+  const sports = allSports;
+  const categories = allCategories;
+  const levels = allLevels;
   const normalizedQuery = query.trim().toLowerCase();
+
+  useEffect(() => {
+    const normalizedText = normalizeSearchText(query);
+
+    if (!normalizedText) {
+      setSelectedSport("ALL");
+      setSelectedCategory("ALL");
+      setSelectedLevels([]);
+      return;
+    }
+
+    const matchedSport =
+      allSports.find((sport) => normalizedText.includes(normalizeSearchText(sport))) ?? "ALL";
+
+    const matchedCategory =
+      allCategories.find((category) => {
+        const normalizedCategory = normalizeSearchText(category);
+        const normalizedCategoryLabel = normalizeSearchText(categoryLabelMap[category] ?? category);
+
+        return (
+          normalizedText.includes(normalizedCategory) ||
+          normalizedText.includes(normalizedCategoryLabel)
+        );
+      }) ?? "ALL";
+
+    const matchedLevels = allLevels.filter((level) => {
+      const normalizedLevel = normalizeSearchText(level);
+      const normalizedLevelLabel = normalizeSearchText(levelLabelMap[level] ?? level);
+
+      return (
+        normalizedText.includes(normalizedLevel) || normalizedText.includes(normalizedLevelLabel)
+      );
+    });
+
+    setSelectedSport(matchedSport);
+    setSelectedCategory(matchedCategory);
+    setSelectedLevels(matchedLevels);
+  }, [query]);
 
   const filteredProducts = useMemo(() => {
     const filtered = mockProducts.filter((product) => {
@@ -122,67 +164,6 @@ export default function ProductsPage() {
             <p className="text-xs font-bold uppercase tracking-[0.18em] [color:var(--color-primary)]">
               Catalogue Produits
             </p>
-            <h1 className="text-4xl leading-tight text-[var(--color-primary)] [font-family:'Decathlon Sans','Segoe UI',Tahoma,sans-serif] md:text-5xl">
-              Trouve le bon equipement
-            </h1>
-            <p className="tone-zone max-w-3xl text-sm [color:var(--color-primary)] md:text-base">
-              Experience de recherche complete avec donnees mock: sports,
-              categories, niveaux, descriptions et prix.
-            </p>
-          </div>
-
-          <div className="grid gap-3 rounded-2xl border border-[var(--color-primary)] bg-[var(--color-secondary)] p-4 md:grid-cols-[1fr_220px] md:items-end md:p-5">
-            <div>
-              <label
-                htmlFor="products-search"
-                className="block text-xs font-bold uppercase tracking-[0.14em] [color:var(--color-primary)]"
-              >
-                Rechercher un produit
-              </label>
-              <div className="mt-2 flex items-center gap-3 rounded-xl border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-2.5">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  className="h-4 w-4 [color:var(--color-primary)]"
-                  aria-hidden="true"
-                >
-                  <circle cx="11" cy="11" r="7" />
-                  <path d="M20 20l-3.5-3.5" />
-                </svg>
-                <input
-                  id="products-search"
-                  type="search"
-                  autoComplete="off"
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Ex: raquette, badminton, debutant..."
-                  className="w-full bg-transparent text-sm text-gray-500 outline-none placeholder:text-gray-400"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label
-                htmlFor="products-sort"
-                className="block text-xs font-bold uppercase tracking-[0.14em] [color:var(--color-primary)]"
-              >
-                Trier
-              </label>
-              <select
-                id="products-sort"
-                value={sortBy}
-                onChange={(event) => setSortBy(event.target.value as SortOption)}
-                className="mt-2 w-full rounded-xl border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-2.5 text-sm text-[var(--color-primary)] outline-none [&>option]:text-[var(--color-primary)]"
-              >
-                <option value="relevance">Pertinence</option>
-                <option value="price-asc">Prix croissant</option>
-                <option value="price-desc">Prix decroissant</option>
-                <option value="name-asc">Nom A-Z</option>
-              </select>
-            </div>
           </div>
 
           <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
@@ -262,10 +243,43 @@ export default function ProductsPage() {
             </aside>
 
             <div className="grid gap-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] [color:var(--color-primary)]">
-                {filteredProducts.length} resultat{filteredProducts.length > 1 ? "s" : ""} sur{" "}
-                {mockProducts.length}
-              </p>
+              <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] [color:var(--color-primary)]">
+                  {filteredProducts.length} resultat{filteredProducts.length > 1 ? "s" : ""} sur{" "}
+                  {mockProducts.length}
+                </p>
+
+                <div className="relative w-full md:w-44">
+                  <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--color-primary)]">
+                    <svg
+                      aria-hidden="true"
+                      viewBox="0 0 20 20"
+                      fill="none"
+                      className="h-3.5 w-3.5"
+                    >
+                      <path
+                        d="M3 5h14l-5.4 6.2v3.8l-3.2-1.8v-2z"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </span>
+                  <select
+                    id="products-sort"
+                    value={sortBy}
+                    onChange={(event) => setSortBy(event.target.value as SortOption)}
+                    aria-label="Trier les produits"
+                    className="w-full rounded-lg border border-[var(--color-primary)] bg-[var(--color-secondary)] py-2 pr-2.5 pl-8 text-xs text-[var(--color-primary)] outline-none [&>option]:text-[var(--color-primary)]"
+                  >
+                    <option value="relevance">Pertinence</option>
+                    <option value="price-asc">Prix croissant</option>
+                    <option value="price-desc">Prix decroissant</option>
+                    <option value="name-asc">Nom A-Z</option>
+                  </select>
+                </div>
+              </div>
 
               {filteredProducts.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-[var(--color-primary)] bg-[var(--color-secondary)] px-6 py-10 text-center">
@@ -425,6 +439,14 @@ function formatPrice(price: number): string {
     style: "currency",
     currency: "EUR",
   }).format(price);
+}
+
+function normalizeSearchText(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .trim();
 }
 
 type FilterChipProps = Readonly<{

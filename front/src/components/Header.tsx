@@ -1,4 +1,7 @@
 export default function Header() {
+  const searchParams = new URLSearchParams(globalThis.window?.location.search ?? "");
+  const currentQuery = searchParams.get("q")?.trim() ?? "";
+
   return (
     <header className="sticky top-0 z-20 border-b border-[var(--color-primary)] bg-[var(--color-secondary)] backdrop-blur">
       <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-3 px-6 py-4 md:flex-nowrap md:gap-4">
@@ -19,6 +22,7 @@ export default function Header() {
               type="search"
               name="q"
               autoComplete="off"
+              defaultValue={currentQuery}
               placeholder="Rechercher un produit..."
               className="w-full bg-transparent text-sm text-gray-500 outline-none placeholder:text-gray-400"
             />
