@@ -25,15 +25,17 @@ class TestGetProduct(TestCase):
         SportLevelProductRelation.objects.create(product=raquette, level="AVERAGE")
 
     def test_get_all_products(self):
-        response = self.client.get("/products/")
+        response = self.client.get("/products")
         json_response = json.loads(response.content.decode("utf-8"))
         self.assertEqual([
             {
+                "id": 1,
                 "levels": ["BEGINNER", "AVERAGE", "EXPERT"],
                 "sports": ["BADMINTON"],
                 "name": "chaussure"
             },
             {
+                "id": 2,
                 "levels": ["AVERAGE"],
                 "sports": ["BADMINTON"],
                 "name": "raquette"
@@ -45,20 +47,23 @@ class TestGetProduct(TestCase):
         SportProductRelation.objects.create(product=volant, sport="BADMINTON")
         SportLevelProductRelation.objects.create(product=volant, level="BEGINNER")
         
-        response = self.client.get("/products/")
+        response = self.client.get("/products")
         json_response = json.loads(response.content.decode("utf-8"))
         self.assertEqual([
             {
+                "id": 1,
                 "levels": ["BEGINNER", "AVERAGE", "EXPERT"],
                 "sports": ["BADMINTON"],
                 "name": "chaussure"
             },
             {
+                "id": 2,
                 "levels": ["AVERAGE"],
                 "sports": ["BADMINTON"],
                 "name": "raquette"
             },
             {
+                "id": 3,
                 "levels": ["BEGINNER"],
                 "sports": ["BADMINTON"],
                 "name": "volant"
