@@ -23,7 +23,7 @@ export default function Footer() {
               <a href="/register" className="block hover:underline">
                 Inscription
               </a>
-              <a href="/search" className="block hover:underline">
+              <a href="/products" className="block hover:underline">
                 Recherche produit
               </a>
             </div>
