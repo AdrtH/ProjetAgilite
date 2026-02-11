@@ -15,9 +15,9 @@ const categoryLabelMap: Record<string, string> = {
   PROTECTION: "Protection",
 };
 
-type ProductDetailsPageProps = {
+type ProductDetailsPageProps = Readonly<{
   productId: string;
-};
+}>;
 
 export default function ProductDetailsPage({ productId }: ProductDetailsPageProps) {
   const product = getProductById(productId);
@@ -207,9 +207,9 @@ function formatPrice(price: number): string {
   }).format(price);
 }
 
-type StockChipProps = {
+type StockChipProps = Readonly<{
   inStock: boolean;
-};
+}>;
 
 function StockChip({ inStock }: StockChipProps) {
   return (
@@ -226,9 +226,9 @@ function StockChip({ inStock }: StockChipProps) {
   );
 }
 
-type StoreStockChipProps = {
+type StoreStockChipProps = Readonly<{
   stock: number;
-};
+}>;
 
 function StoreStockChip({ stock }: StoreStockChipProps) {
   return (
@@ -242,10 +242,10 @@ function StoreStockChip({ stock }: StoreStockChipProps) {
   );
 }
 
-type InfoCardProps = {
+type InfoCardProps = Readonly<{
   title: string;
   children: ReactNode;
-};
+}>;
 
 function InfoCard({ title, children }: InfoCardProps) {
   return (

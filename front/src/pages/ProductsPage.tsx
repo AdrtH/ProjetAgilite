@@ -31,10 +31,10 @@ export default function ProductsPage() {
 
   const sports = Array.from(
     new Set(mockProducts.flatMap((product) => product.sports)),
-  ).sort();
+  ).sort((left, right) => left.localeCompare(right, "fr"));
   const categories = Array.from(
     new Set(mockProducts.map((product) => product.category)),
-  ).sort();
+  ).sort((left, right) => left.localeCompare(right, "fr"));
   const levels = Array.from(
     new Set(mockProducts.flatMap((product) => product.levels)),
   );
@@ -130,7 +130,10 @@ export default function ProductsPage() {
 
           <div className="grid gap-3 rounded-2xl border border-[#722F37]/20 bg-white/80 p-4 md:grid-cols-[1fr_220px] md:items-end md:p-5">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-[0.14em] text-[#722F37]/75">
+              <label
+                htmlFor="products-search"
+                className="block text-xs font-bold uppercase tracking-[0.14em] text-[#722F37]/75"
+              >
                 Rechercher un produit
               </label>
               <div className="mt-2 flex items-center gap-3 rounded-xl border border-[#722F37]/25 bg-white px-3 py-2.5">
@@ -138,6 +141,7 @@ export default function ProductsPage() {
                   Search
                 </span>
                 <input
+                  id="products-search"
                   type="search"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
@@ -148,10 +152,14 @@ export default function ProductsPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-[0.14em] text-[#722F37]/75">
+              <label
+                htmlFor="products-sort"
+                className="block text-xs font-bold uppercase tracking-[0.14em] text-[#722F37]/75"
+              >
                 Trier
               </label>
               <select
+                id="products-sort"
                 value={sortBy}
                 onChange={(event) => setSortBy(event.target.value as SortOption)}
                 className="mt-2 w-full rounded-xl border border-[#722F37]/25 bg-white px-3 py-2.5 text-sm text-[#722F37] outline-none"
@@ -350,9 +358,9 @@ export default function ProductsPage() {
   );
 }
 
-type StockChipProps = {
+type StockChipProps = Readonly<{
   inStock: boolean;
-};
+}>;
 
 function StockChip({ inStock }: StockChipProps) {
   return (
@@ -406,11 +414,11 @@ function formatPrice(price: number): string {
   }).format(price);
 }
 
-type FilterChipProps = {
+type FilterChipProps = Readonly<{
   label: string;
   active: boolean;
   onClick: () => void;
-};
+}>;
 
 function FilterChip({ label, active, onClick }: FilterChipProps) {
   return (

@@ -288,7 +288,7 @@ export const getProductById = (id: string): Product | undefined =>
   mockProducts.find((product) => product.id === id);
 
 function splitStock(total: number, parts: number, seed: number): number[] {
-  const distribution = Array(parts).fill(0);
+  const distribution = new Array<number>(parts).fill(0);
 
   for (let index = 0; index < total; index += 1) {
     const slot = (seed + index) % parts;
@@ -308,6 +308,7 @@ function getImagesForProduct(productId: string): string[] {
 
 function extractImageOrder(path: string): number {
   const filename = path.split("/").pop() ?? "";
-  const match = filename.match(/-(\d+)\.[^.]+$/);
+  const regexp = /-(\d+)\.[^.]+$/;
+  const match = regexp.exec(filename);
   return match ? Number(match[1]) : Number.POSITIVE_INFINITY;
 }
