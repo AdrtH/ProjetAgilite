@@ -23,7 +23,10 @@ const formatTitle = (value: string): string => {
 };
 
 export default function ProductsPage() {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(() => {
+    const searchParams = new URLSearchParams(globalThis.window?.location.search ?? "");
+    return searchParams.get("q")?.trim() ?? "";
+  });
   const [selectedSport, setSelectedSport] = useState("ALL");
   const [selectedCategory, setSelectedCategory] = useState("ALL");
   const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
@@ -113,40 +116,50 @@ export default function ProductsPage() {
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8 md:px-6 md:py-12">
-      <section className="overflow-hidden rounded-[32px] border border-[#722F37]/20 bg-gradient-to-br from-[#FFF9ED] via-[#F8EED7] to-[#EFDFBB] shadow-[0_24px_70px_rgba(114,47,55,0.16)]">
+      <section className="overflow-hidden rounded-[32px] border border-[var(--color-primary)] bg-[var(--color-secondary)] shadow-sm">
         <div className="grid gap-8 px-6 py-8 md:px-10 md:py-10">
           <div className="grid gap-3">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#722F37]/80">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] [color:var(--color-primary)]">
               Catalogue Produits
             </p>
-            <h1 className="text-4xl leading-tight text-[#722F37] [font-family:'Fraunces',serif] md:text-5xl">
+            <h1 className="text-4xl leading-tight text-[var(--color-primary)] [font-family:'Decathlon Sans','Segoe UI',Tahoma,sans-serif] md:text-5xl">
               Trouve le bon equipement
             </h1>
-            <p className="max-w-3xl text-sm text-[#722F37]/80 md:text-base">
+            <p className="tone-zone max-w-3xl text-sm [color:var(--color-primary)] md:text-base">
               Experience de recherche complete avec donnees mock: sports,
               categories, niveaux, descriptions et prix.
             </p>
           </div>
 
-          <div className="grid gap-3 rounded-2xl border border-[#722F37]/20 bg-white/80 p-4 md:grid-cols-[1fr_220px] md:items-end md:p-5">
+          <div className="grid gap-3 rounded-2xl border border-[var(--color-primary)] bg-[var(--color-secondary)] p-4 md:grid-cols-[1fr_220px] md:items-end md:p-5">
             <div>
               <label
                 htmlFor="products-search"
-                className="block text-xs font-bold uppercase tracking-[0.14em] text-[#722F37]/75"
+                className="block text-xs font-bold uppercase tracking-[0.14em] [color:var(--color-primary)]"
               >
                 Rechercher un produit
               </label>
-              <div className="mt-2 flex items-center gap-3 rounded-xl border border-[#722F37]/25 bg-white px-3 py-2.5">
-                <span className="text-xs font-semibold uppercase text-[#722F37]/65">
-                  Search
-                </span>
+              <div className="mt-2 flex items-center gap-3 rounded-xl border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-2.5">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className="h-4 w-4 [color:var(--color-primary)]"
+                  aria-hidden="true"
+                >
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="M20 20l-3.5-3.5" />
+                </svg>
                 <input
                   id="products-search"
                   type="search"
+                  autoComplete="off"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder="Ex: raquette, badminton, debutant..."
-                  className="w-full bg-transparent text-sm text-[#722F37] outline-none placeholder:text-[#722F37]/55"
+                  className="w-full bg-transparent text-sm text-gray-500 outline-none placeholder:text-gray-400"
                 />
               </div>
             </div>
@@ -154,7 +167,7 @@ export default function ProductsPage() {
             <div>
               <label
                 htmlFor="products-sort"
-                className="block text-xs font-bold uppercase tracking-[0.14em] text-[#722F37]/75"
+                className="block text-xs font-bold uppercase tracking-[0.14em] [color:var(--color-primary)]"
               >
                 Trier
               </label>
@@ -162,7 +175,7 @@ export default function ProductsPage() {
                 id="products-sort"
                 value={sortBy}
                 onChange={(event) => setSortBy(event.target.value as SortOption)}
-                className="mt-2 w-full rounded-xl border border-[#722F37]/25 bg-white px-3 py-2.5 text-sm text-[#722F37] outline-none"
+                className="mt-2 w-full rounded-xl border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-2.5 text-sm text-[var(--color-primary)] outline-none [&>option]:text-[var(--color-primary)]"
               >
                 <option value="relevance">Pertinence</option>
                 <option value="price-asc">Prix croissant</option>
@@ -173,15 +186,15 @@ export default function ProductsPage() {
           </div>
 
           <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
-            <aside className="h-fit rounded-2xl border border-[#722F37]/20 bg-white/80 p-4">
+            <aside className="h-fit rounded-2xl border border-[var(--color-primary)] bg-[var(--color-secondary)] p-4">
               <div className="mb-4 flex items-center justify-between">
-                <p className="text-sm font-bold uppercase tracking-wide text-[#722F37]">
+                <p className="text-sm font-bold uppercase tracking-wide text-[var(--color-primary)]">
                   Filtres
                 </p>
                 <button
                   type="button"
                   onClick={resetFilters}
-                  className="text-xs font-semibold text-[#722F37]/80 underline-offset-2 hover:underline"
+                  className="text-xs font-semibold [color:var(--color-primary)] underline-offset-2 hover:underline"
                 >
                   Reinitialiser
                 </button>
@@ -189,7 +202,7 @@ export default function ProductsPage() {
 
               <div className="grid gap-4">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#722F37]/75">
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] [color:var(--color-primary)]">
                     Sport
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
@@ -210,7 +223,7 @@ export default function ProductsPage() {
                 </div>
 
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#722F37]/75">
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] [color:var(--color-primary)]">
                     Categorie
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
@@ -231,7 +244,7 @@ export default function ProductsPage() {
                 </div>
 
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#722F37]/75">
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] [color:var(--color-primary)]">
                     Niveau
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
@@ -249,17 +262,17 @@ export default function ProductsPage() {
             </aside>
 
             <div className="grid gap-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#722F37]/80">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] [color:var(--color-primary)]">
                 {filteredProducts.length} resultat{filteredProducts.length > 1 ? "s" : ""} sur{" "}
                 {mockProducts.length}
               </p>
 
               {filteredProducts.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-[#722F37]/30 bg-white/70 px-6 py-10 text-center">
-                  <p className="text-lg font-semibold text-[#722F37]">
+                <div className="rounded-2xl border border-dashed border-[var(--color-primary)] bg-[var(--color-secondary)] px-6 py-10 text-center">
+                  <p className="text-lg font-semibold text-[var(--color-primary)]">
                     Aucun produit ne correspond a ta recherche.
                   </p>
-                  <p className="mt-2 text-sm text-[#722F37]/75">
+                  <p className="mt-2 text-sm [color:var(--color-primary)]">
                     Essaie avec un autre mot-cle ou modifie les filtres sport/categorie/niveau.
                   </p>
                 </div>
@@ -269,7 +282,7 @@ export default function ProductsPage() {
                     <a
                       key={product.id}
                       href={`/product/${product.id}`}
-                      className="group block rounded-2xl border border-[#722F37]/15 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-[#722F37]/40 hover:shadow-lg focus-visible:-translate-y-1 focus-visible:border-[#722F37]/40 focus-visible:shadow-lg focus-visible:outline-none"
+                      className="group block rounded-2xl border border-[var(--color-primary)] bg-[var(--color-secondary)] p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-[var(--color-primary)] hover:shadow-lg focus-visible:-translate-y-1 focus-visible:border-[var(--color-primary)] focus-visible:shadow-lg focus-visible:outline-none"
                     >
                       {product.cardImage ? (
                         <div className="-mx-2 -mt-2 mb-4 overflow-hidden rounded-xl">
@@ -281,29 +294,29 @@ export default function ProductsPage() {
                           />
                         </div>
                       ) : (
-                        <div className="-mx-2 -mt-2 mb-4 rounded-xl border border-dashed border-[#722F37]/25 bg-[#EFDFBB]/35 px-4 py-10 text-center text-xs font-semibold uppercase tracking-wide text-[#722F37]/70">
+                        <div className="-mx-2 -mt-2 mb-4 rounded-xl border border-dashed border-[var(--color-primary)] bg-[var(--color-secondary)] px-4 py-10 text-center text-xs font-semibold uppercase tracking-wide [color:var(--color-primary)]">
                           Image produit
                         </div>
                       )}
 
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="rounded-full border border-[#722F37]/25 bg-[#EFDFBB] px-3 py-1 text-xs font-bold uppercase tracking-wide text-[#722F37]">
+                          <span className="rounded-full border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-1 text-xs font-bold uppercase tracking-wide text-[var(--color-primary)]">
                             {categoryLabelMap[product.category] ?? product.category}
                           </span>
                           <StockChip inStock={product.inStock} />
                         </div>
-                        <p className="text-lg font-black text-[#722F37]">{formatPrice(product.price)}</p>
+                        <p className="text-lg font-black text-[var(--color-primary)]">{formatPrice(product.price)}</p>
                       </div>
 
-                      <h2 className="mt-3 text-2xl leading-tight text-[#722F37] [font-family:'Fraunces',serif]">
+                      <h2 className="mt-3 text-2xl leading-tight text-[var(--color-primary)] [font-family:'Decathlon Sans','Segoe UI',Tahoma,sans-serif]">
                         {formatTitle(product.name)}
                       </h2>
-                      <p className="mt-2 text-sm leading-relaxed text-[#722F37]/80">
+                      <p className="mt-2 text-sm leading-relaxed [color:var(--color-primary)]">
                         {product.description}
                       </p>
 
-                      <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-[#722F37]/70">
+                      <p className="mt-3 text-xs font-semibold uppercase tracking-wide [color:var(--color-primary)]">
                         Sport principal:{" "}
                         {selectedSport !== "ALL" && product.sports.includes(selectedSport)
                           ? selectedSport
@@ -312,14 +325,14 @@ export default function ProductsPage() {
 
                       <div className="mt-3 grid gap-3">
                         <div>
-                          <p className="text-[11px] font-semibold uppercase tracking-wide text-[#722F37]/70">
+                          <p className="text-[11px] font-semibold uppercase tracking-wide [color:var(--color-primary)]">
                             Sports concernes
                           </p>
                           <div className="mt-2 flex flex-wrap gap-2">
                             {product.sports.map((sport) => (
                               <span
                                 key={`${product.id}-sport-${sport}`}
-                                className="rounded-full border border-[#722F37]/30 bg-[#EFDFBB] px-3 py-1 text-xs font-semibold text-[#722F37]"
+                                className="rounded-full border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-1 text-xs font-semibold text-[var(--color-primary)]"
                               >
                                 {sport}
                               </span>
@@ -328,14 +341,14 @@ export default function ProductsPage() {
                         </div>
 
                         <div>
-                          <p className="text-[11px] font-semibold uppercase tracking-wide text-[#722F37]/70">
+                          <p className="text-[11px] font-semibold uppercase tracking-wide [color:var(--color-primary)]">
                             Niveaux
                           </p>
                           <div className="mt-2 flex flex-wrap gap-2">
                             {product.levels.map((level) => (
                               <span
                                 key={`${product.id}-level-${level}`}
-                                className="rounded-full bg-[#722F37] px-3 py-1 text-xs font-semibold text-[#EFDFBB]"
+                                className="rounded-full bg-[var(--color-primary)] px-3 py-1 text-xs font-semibold text-[var(--color-secondary)]"
                               >
                                 {levelLabelMap[level] ?? level}
                               </span>
@@ -343,7 +356,7 @@ export default function ProductsPage() {
                           </div>
                         </div>
                       </div>
-                      <p className="mt-4 text-xs font-bold uppercase tracking-wide text-[#722F37]/75 transition group-hover:text-[#722F37]">
+                      <p className="mt-4 text-xs font-bold uppercase tracking-wide [color:var(--color-primary)] transition group-hover:text-[var(--color-primary)]">
                         Voir le detail produit
                       </p>
                     </a>
@@ -367,11 +380,11 @@ function StockChip({ inStock }: StockChipProps) {
     <span
       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${
         inStock
-          ? "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-300"
-          : "bg-rose-100 text-rose-700 ring-1 ring-rose-300"
+          ? "bg-green-100 text-green-700 ring-1 ring-green-300"
+          : "bg-red-100 text-red-700 ring-1 ring-red-300"
       }`}
     >
-      <span className={`h-1.5 w-1.5 rounded-full ${inStock ? "bg-emerald-500" : "bg-rose-500"}`} />
+      <span className={`h-1.5 w-1.5 rounded-full ${inStock ? "bg-green-500" : "bg-red-500"}`} />
       {inStock ? "Stock" : "Rupture"}
     </span>
   );
@@ -427,8 +440,8 @@ function FilterChip({ label, active, onClick }: FilterChipProps) {
       onClick={onClick}
       className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
         active
-          ? "border-[#722F37] bg-[#722F37] text-[#EFDFBB]"
-          : "border-[#722F37]/30 bg-white text-[#722F37] hover:bg-[#EFDFBB]/60"
+          ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-secondary)]"
+          : "border-[var(--color-primary)] bg-[var(--color-secondary)] text-[var(--color-primary)] hover:bg-[var(--color-secondary)]"
       }`}
     >
       {label}
