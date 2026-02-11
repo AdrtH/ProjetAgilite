@@ -96,13 +96,17 @@ class TestGetProduct(TestCase):
                 "id": "1",
                 "levels": ["AVERAGE", "BEGINNER", "EXPERT"],
                 "sports": ["BADMINTON"],
-                "name": "chaussure"
+                "name": "chaussure",
+                "price": "0.00",
+                "card_image": None
             },
             {
                 "id": "2",
                 "levels": ["AVERAGE"],
                 "sports": ["BADMINTON"],
-                "name": "raquette"
+                "name": "raquette",
+                "price": "0.00",
+                "card_image": None
             }
         ], json_response)
 
@@ -118,20 +122,170 @@ class TestGetProduct(TestCase):
                 "id": "1",
                 "levels": ["AVERAGE", "BEGINNER", "EXPERT"],
                 "sports": ["BADMINTON"],
-                "name": "chaussure"
+                "name": "chaussure",
+                "price": "0.00",
+                "card_image": None
             },
             {
                 "id": "2",
                 "levels": ["AVERAGE"],
                 "sports": ["BADMINTON"],
-                "name": "raquette"
+                "name": "raquette",
+                "price": "0.00",
+                "card_image": None
             },
             {
                 "id": "3",
                 "levels": ["BEGINNER"],
                 "sports": ["BADMINTON"],
-                "name": "volant"
+                "name": "volant",
+                "price": "0.00",
+                "card_image": None
             }
+        ], json_response)
+
+class TestGetFilteredProduct(TestCase):
+    @classmethod
+    def setUp(cls):
+        cls.client = Client()
+        
+        chaussure = Product.objects.create(id="1", name="chaussure", price=1000)
+        raquette = Product.objects.create(id="2", name="raquette", price=50)
+        balle = Product.objects.create(id="3", name="balle", price=30)
+
+        ProductSports.objects.create(product=chaussure, sport="BADMINTON") 
+        ProductSports.objects.create(product=raquette, sport="BADMINTON")
+        ProductSports.objects.create(product=balle, sport="BASKETBALL")
+
+        ProductLevels.objects.create(product=chaussure, level="BEGINNER") 
+        ProductLevels.objects.create(product=chaussure, level="AVERAGE") 
+        ProductLevels.objects.create(product=chaussure, level="EXPERT")
+        ProductLevels.objects.create(product=raquette, level="AVERAGE")
+        ProductLevels.objects.create(product=balle, level="AVERAGE")
+        ProductLevels.objects.create(product=balle, level="EXPERT")
+
+    def test_get_all_products(self):
+        response = self.client.get("/products")
+        json_response = json.loads(response.content.decode("utf-8"))
+        self.assertEqual([
+            {
+                "id": "1",
+                "levels": ["AVERAGE", "BEGINNER", "EXPERT"],
+                "sports": ["BADMINTON"],
+                "name": "chaussure",
+                "price": "1000.00",
+                "card_image": None
+            },
+            {
+                "id": "2",
+                "levels": ["AVERAGE"],
+                "sports": ["BADMINTON"],
+                "name": "raquette",
+                "price": "50.00",
+                "card_image": None
+            },
+            {
+                "id": "3",
+                "levels": ["AVERAGE", "EXPERT"],
+                "sports": ["BASKETBALL"],
+                "name": "balle",
+                "price": "30.00",
+                "card_image": None
+            }
+        ], json_response)
+
+    def test_get_all_products_filtered_by_level(self):
+        response = self.client.get("/products?level=EXPERT")
+        json_response = json.loads(response.content.decode("utf-8"))
+        self.assertEqual([
+            {
+                "id": "1",
+                "levels": ["AVERAGE", "BEGINNER", "EXPERT"],
+                "sports": ["BADMINTON"],
+                "name": "chaussure",
+                "price": "1000.00",
+                "card_image": None
+            },
+            {
+                "id": "3",
+                "levels": ["AVERAGE", "EXPERT"],
+                "sports": ["BASKETBALL"],
+                "name": "balle",
+                "price": "30.00",
+                "card_image": None
+            },
+        ], json_response)
+
+    def test_get_products_filtered_by_sport(self):
+        response = self.client.get("/products?sport=BADMINTON")
+        json_response = json.loads(response.content.decode("utf-8"))
+        self.assertEqual([
+            {
+                "id": "1",
+                "levels": ["AVERAGE", "BEGINNER", "EXPERT"],
+                "sports": ["BADMINTON"],
+                "name": "chaussure",
+                "price": "1000.00",
+                "card_image": None
+            },
+            {
+                "id": "2",
+                "levels": ["AVERAGE"],
+                "sports": ["BADMINTON"],
+                "name": "raquette",
+                "price": "50.00",
+                "card_image": None
+            },
+        ], json_response)
+
+    def test_get_products_filtered_by_level_and_sport(self):
+        response = self.client.get("/products?sport=BADMINTON&level=EXPERT")
+        json_response = json.loads(response.content.decode("utf-8"))
+        self.assertEqual([
+            {
+                "id": "1",
+                "levels": ["AVERAGE", "BEGINNER", "EXPERT"],
+                "sports": ["BADMINTON"],
+                "name": "chaussure",
+                "price": "1000.00",
+                "card_image": None
+            }
+        ], json_response)
+
+    def test_get_products_filtered_by_price(self):
+        response = self.client.get("/products?minPrice=10&maxPrice=100")
+        json_response = json.loads(response.content.decode("utf-8"))
+        self.assertEqual([
+            {
+                "id": "2",
+                "levels": ["AVERAGE"],
+                "sports": ["BADMINTON"],
+                "name": "raquette",
+                "price": "50.00",
+                "card_image": None
+            },
+            {
+                "id": "3",
+                "levels": ["AVERAGE", "EXPERT"],
+                "sports": ["BASKETBALL"],
+                "name": "balle",
+                "price": "30.00",
+                "card_image": None
+            }
+        ], json_response)
+
+    def test_get_products_filtered_by_price_and_sport(self):
+        response = self.client.get("/products?minPrice=10&maxPrice=100&sport=Badminton")
+        json_response = json.loads(response.content.decode("utf-8"))
+        self.assertEqual([
+            {
+                "id": "2",
+                "levels": ["AVERAGE"],
+                "sports": ["BADMINTON"],
+                "name": "raquette",
+                "price": "50.00",
+                "card_image": None
+            },
         ], json_response)
 
 class UserModelTest(TestCase):
@@ -166,6 +320,10 @@ class TestGetSports(TestCase):
             {
                 "key": "BAD",
                 "name": "Badminton"
+            },
+            {
+                "key": "BASKET",
+                "name": "Basketball"
             }
         ], json_response)
 

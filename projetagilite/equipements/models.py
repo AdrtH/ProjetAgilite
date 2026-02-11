@@ -4,7 +4,16 @@ from django.contrib.auth.models import AbstractUser
 import uuid
 
 class Sport(models.TextChoices):
-    BADMINTON = "BAD", "Badminton"
+    BADMINTON = "BADMINTON", "Badminton"
+    BASKETBALL = "BASKETBALL", "Basketball"
+    YOGA = "YOGA", "YOGA"
+    NATATION = "NATATION", "NATATION"
+    MUSCULATION = "MUSCULATION", "MUSCULATION"
+    CYCLISME = "CYCLISME", "CYCLISME"
+    FOOTBALL = "FOOTBALL", "FOOTBALL"
+    RANDONNEE = "RANDONNEE", "RANDONNEE"
+    RUNNING = "RUNNING", "RUNNING"
+    TENNIS = "TENNIS", "TENNIS"
 
 class SportLevel(models.TextChoices):
     BEGINNER = "BEGINNER", "Débutant"
