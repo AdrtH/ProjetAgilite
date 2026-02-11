@@ -51,7 +51,7 @@ class Product(models.Model):
 
 class ProductSports(models.Model):
     pk = models.CompositePrimaryKey("product_id", "sport")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="sports")
     sport = models.CharField(max_length=50, choices=Sport.choices)
 
     class Meta:
