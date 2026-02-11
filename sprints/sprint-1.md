@@ -1,4 +1,4 @@
-# Sprint 0
+# Sprint 1
 
 PO: Astrée 
 SM: Théo   
