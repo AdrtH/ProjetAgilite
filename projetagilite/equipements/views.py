@@ -69,22 +69,33 @@ def get_sport(request):
 
 @api.post("/register")
 def post_register(request,payload:UserInput):
+    username = payload.name.strip().lower()
+    if User.objects.filter(username__iexact=username).exists():
+        return JsonResponse({'error': 'Utilisateur existant'}, status=400)
 
-    known_user= User.objects.all()
-    for i in known_user:
-        if payload.name==i.username:
-            return JsonResponse({'error': 'Utilisateur existant'}, status=400)
-    nouvel_user = User.objects.create(username=payload.name,sportsPratique=payload.sport,niveauSportif=payload.niveauSportif)
+    nouvel_user = User.objects.create(
+        username=username,
+        sportsPratique=payload.sport,
+        niveauSportif=payload.niveauSportif,
+    )
     nouvel_user.set_password(payload.password)
     nouvel_user.save()
     return 'success'
 
 @api.post("/login")
 def login(request,payload:LoginInput):
-    known_user=User.objects.all()
-    for i in known_user:
-        if payload.name==i.username:
-            if(check_password(payload.password,i.password)):
-                return JsonResponse({'bravo : ' : i.id},status=200)
-            else:return JsonResponse({'error : ' :'utilisateurs ou mot de passe non valide'},status=400)
+    username = payload.name.strip().lower()
+    user = User.objects.filter(username__iexact=username).first()
+    if user is None:
+        return JsonResponse({'error : ' : 'utilisateurs ou mot de passe non valide'},status=400)
+
+    if check_password(payload.password, user.password):
+        return JsonResponse({'bravo : ' : user.id},status=200)
+
+    # Compatibilite comptes legacy en mot de passe non hashe.
+    if user.password == payload.password:
+        user.set_password(payload.password)
+        user.save(update_fields=["password"])
+        return JsonResponse({'bravo : ' : user.id},status=200)
+
     return JsonResponse({'error : ' : 'utilisateurs ou mot de passe non valide'},status=400)
