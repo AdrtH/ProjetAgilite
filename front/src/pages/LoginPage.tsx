@@ -1,3 +1,5 @@
+import { useMemo, useState } from "react";
+
 const highlights = [
   "Retrouvez vos recommandations d'équipement personnalisées.",
   "Suivez votre profil sportif et vos budgets enregistrés.",
@@ -5,6 +7,49 @@ const highlights = [
 ];
 
 export default function LoginPage() {
+  const [form, setForm] = useState({
+    name: "",
+    password: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+
+  const isFormValid = useMemo(() => {
+    return form.name.trim() !== "" && form.password.trim() !== "";
+  }, [form]);
+
+  const submitLogin = async () => {
+    let response: Response;
+    const payload = {
+      name: form.name.trim().toLowerCase(),
+      password: form.password,
+    };
+
+    try {
+      response = await fetch("/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+    } catch {
+      throw new Error("Impossible de contacter le serveur.");
+    }
+
+    if (response.ok) {
+      return;
+    }
+
+    const body = (await response.json().catch(() => null)) as
+      | { error?: string; "error : "?: string }
+      | null;
+    const serverError =
+      body?.error ?? body?.["error : "] ?? "Utilisateur ou mot de passe non valide.";
+    throw new Error(serverError);
+  };
+
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8 md:px-6 md:py-12">
       <div className="grid overflow-hidden rounded-[32px] border border-[var(--color-primary)] shadow-sm lg:grid-cols-[1.05fr_1fr]">
@@ -49,7 +94,27 @@ export default function LoginPage() {
           <form
             className="grid gap-3"
             autoComplete="off"
-            onSubmit={(event) => event.preventDefault()}
+            onSubmit={async (event) => {
+              event.preventDefault();
+              if (!isFormValid || isSubmitting) {
+                return;
+              }
+
+              setErrorMessage("");
+              setSuccessMessage("");
+              setIsSubmitting(true);
+
+              try {
+                await submitLogin();
+                setSuccessMessage("Connexion validee.");
+              } catch (error) {
+                const message =
+                  error instanceof Error ? error.message : "Erreur lors de la connexion.";
+                setErrorMessage(message);
+              } finally {
+                setIsSubmitting(false);
+              }
+            }}
           >
             <label className="grid gap-1.5">
               <span className="text-xs font-bold">E-mail</span>
@@ -58,6 +123,10 @@ export default function LoginPage() {
                 type="email"
                 autoComplete="off"
                 placeholder="prenom@mail.com"
+                value={form.name}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, name: event.target.value }))
+                }
               />
             </label>
 
@@ -68,14 +137,26 @@ export default function LoginPage() {
                 type="password"
                 autoComplete="off"
                 placeholder="********"
+                value={form.password}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, password: event.target.value }))
+                }
               />
             </label>
 
+            {errorMessage ? (
+              <p className="text-xs font-bold text-red-700">{errorMessage}</p>
+            ) : null}
+            {successMessage ? (
+              <p className="text-xs font-bold text-green-700">{successMessage}</p>
+            ) : null}
+
             <button
-              className="mt-1 rounded-xl bg-[var(--color-primary)] px-4 py-3 font-bold text-[var(--color-secondary)] transition active:translate-y-px"
+              className="mt-1 rounded-xl bg-[var(--color-primary)] px-4 py-3 font-bold text-[var(--color-secondary)] transition active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
               type="submit"
+              disabled={!isFormValid || isSubmitting}
             >
-              Se connecter
+              {isSubmitting ? "Connexion..." : "Se connecter"}
             </button>
           </form>
 

@@ -76,6 +76,12 @@ export default function RegisterPage() {
 
   const submitRegistration = async () => {
     let response: Response;
+    const payload = {
+      ...form,
+      name: form.name.trim().toLowerCase(),
+      sport: form.sport.trim(),
+      niveauSportif: form.niveauSportif.trim(),
+    };
 
     try {
       response = await fetch("/api/register", {
@@ -83,7 +89,7 @@ export default function RegisterPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
     } catch {
       throw new Error("Impossible de contacter le serveur.");
