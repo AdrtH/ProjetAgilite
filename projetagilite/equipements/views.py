@@ -107,6 +107,7 @@ def login(request,payload:LoginInput):
         return JsonResponse({'bravo : ' : user.id},status=200)
 
     return JsonResponse({'error : ' : 'utilisateurs ou mot de passe non valide'},status=400)
+<<<<<<< HEAD
 
 @api.get("/user/:name")
 def get_user(request, name: str):
@@ -165,3 +166,5 @@ def put_user(request, name: str, payload: UserEdit):
         
     u.update(**modifications)
     return "Success"
+=======
+>>>>>>> a37f639 (connexion login)
