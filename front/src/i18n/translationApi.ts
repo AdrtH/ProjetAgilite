@@ -154,7 +154,12 @@ function isDeepLApiUrl(url: string): boolean {
 }
 
 function resolveDeepLEndpoint(url: string): string {
-  const normalized = url.replace(/\/+$/, "");
+  let end = url.length;
+  while (end > 0 && url.charCodeAt(end - 1) === 47) {
+    end -= 1;
+  }
+
+  const normalized = url.slice(0, end);
   if (normalized.endsWith("/translate")) {
     return normalized;
   }
