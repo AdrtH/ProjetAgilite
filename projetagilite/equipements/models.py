@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.validators import MinValueValidator
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import MinValueValidator
 import uuid
 
 class Sport(models.TextChoices):
@@ -38,7 +39,7 @@ class Product(models.Model):
     warranty_months = models.IntegerField(default=0)
     delivery_days = models.IntegerField(default=0)
     in_stock = models.BooleanField(default=False)  # Representing 0,1 as Boolean
-    stock_count = models.IntegerField(default=0)
+    stock_count = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     card_image = models.URLField(blank=True, null=True)
 
     def __str__(self):

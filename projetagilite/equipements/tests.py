@@ -114,7 +114,6 @@ class TestGetProduct(TestCase):
         volant = Product.objects.create(id="3", name="volant")
         ProductSports.objects.create(product=volant, sport="BADMINTON")
         ProductLevels.objects.create(product=volant, level="BEGINNER")
-        
         response = self.client.get("/products")
         json_response = json.loads(response.content.decode("utf-8"))
         self.assertEqual([
@@ -311,6 +310,24 @@ class UserModelTest(TestCase):
 
         self.assertEqual(user.niveauSportif, SportLevel.BEGINNER)
 
+class StockModelTest(TestCase):
+
+    def setUp(self):
+        self.product = Product.objects.create(
+            name="Bike",
+            price=1000.00,
+            stock_count=10
+        )
+
+    def test_create_stock_valid(self):
+        self.assertEqual(self.product.stock_count, 10)
+
+    def test_stock_quantity_cannot_be_negative(self):
+        Product.objects.filter(name=self.product.name).update(stock_count=-5)
+
+        with self.assertRaises(ValidationError):
+            product = Product.objects.get(name=self.product.name)
+            product.full_clean()  # Trigger validation
 
 class TestGetSports(TestCase):
     def test_get_all_sports(self):
@@ -318,12 +335,44 @@ class TestGetSports(TestCase):
         json_response = json.loads(response.content.decode('utf-8'))
         self.assertEqual([
             {
-                "key": "BAD",
+                "key": "BADMINTON",
                 "name": "Badminton"
             },
             {
-                "key": "BASKET",
+                "key": "BASKETBALL",
                 "name": "Basketball"
+            },
+            {
+                "key": "YOGA",
+                "name": "YOGA"
+            },
+            {
+                "key": "NATATION",
+                "name": "NATATION"
+            },
+            {
+                "key": "MUSCULATION",
+                "name": "MUSCULATION"
+            },
+            {
+                "key": "CYCLISME",
+                "name": "CYCLISME"
+            },
+            {
+                "key": "FOOTBALL",
+                "name": "FOOTBALL"
+            },
+            {
+                "key": "RANDONNEE",
+                "name": "RANDONNEE"
+            },
+            {
+                "key": "RUNNING",
+                "name": "RUNNING"
+            },
+            {
+                "key": "TENNIS",
+                "name": "TENNIS"
             }
         ], json_response)
 
