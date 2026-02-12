@@ -575,8 +575,8 @@ export default function ProductsPage() {
                   </p>
                   <div className="mt-2 grid gap-2">
                     <div className="flex items-center justify-between text-[11px] font-semibold [color:var(--color-primary)]">
-                      <span>{formatPrice(selectedMinPrice)}</span>
-                      <span>{formatPrice(selectedMaxPrice)}</span>
+                      <span>{formatPrice(selectedMinPrice, language)}</span>
+                      <span>{formatPrice(selectedMaxPrice, language)}</span>
                     </div>
                     <div className="relative h-8">
                       <div className="absolute top-1/2 h-1 w-full -translate-y-1/2 rounded-full bg-[var(--color-primary)]/20" />
