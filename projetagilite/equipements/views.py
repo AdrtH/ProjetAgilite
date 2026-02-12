@@ -118,7 +118,6 @@ def get_user(request, name: str):
         "name": u.username,
         "sport": u.sportsPratique,
         "level": u.niveauSportif
-<<<<<<< HEAD
     }, status=200)
 
 @api.put("/user/:name")
