@@ -61,10 +61,6 @@ export default function RegisterPage() {
           <h1 className="max-w-[13ch] text-3xl leading-tight [font-family:'Decathlon Sans','Segoe UI',Tahoma,sans-serif] md:text-4xl">
             Créez votre compte
           </h1>
-          <p className="max-w-[34ch] text-sm leading-relaxed text-[var(--color-secondary)] md:text-base">
-            Créez votre compte en envoyant directement les informations au back.
-          </p>
-
           <ul className="grid gap-3 text-sm md:text-base" aria-label="Avantages du compte">
             {highlights.map((item) => (
               <li key={item} className="flex items-start gap-3 leading-relaxed">
@@ -83,9 +79,6 @@ export default function RegisterPage() {
             <h2 className="mt-3 text-3xl leading-tight [font-family:'Decathlon Sans','Segoe UI',Tahoma,sans-serif]">
               Inscription
             </h2>
-            <p className="mt-2 text-sm leading-relaxed text-[var(--color-primary)]">
-              Renseignez les 4 champs attendus par votre API.
-            </p>
           </div>
 
           <form
