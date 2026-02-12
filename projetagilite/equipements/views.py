@@ -25,6 +25,7 @@ def product_to_response(product):
         "name": product.name,
         "price": product.price,
         "card_image": product.card_image,
+        "stock_count": product.stock_count,
     }
 
 # Create your views here.
@@ -88,3 +89,16 @@ def login(request,payload:LoginInput):
                 return JsonResponse({'bravo : ' : i.id},status=200)
             else:return JsonResponse({'error : ' :'utilisateurs ou mot de passe non valide'},status=400)
     return JsonResponse({'error : ' : 'utilisateurs ou mot de passe non valide'},status=400)
+
+@api.get("/user/:name")
+def get_user(request, name: str):
+    u = User.objects.filter(username=name).first()
+    if u is None:
+        return JsonResponse({"error": "Utilisateur non existant"}, status=404)
+    return JsonResponse({
+        "id": u.id,
+        "name": u.username,
+        "sport": u.sportsPratique,
+        "level": u.niveauSportif
+    }, status=200)
+
