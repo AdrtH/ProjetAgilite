@@ -17,12 +17,16 @@ const categoryLabelMap: Record<string, string> = {
 
 type SortOption = "relevance" | "price-asc" | "price-desc" | "name-asc";
 type ShareFeedback = "idle" | "copied" | "error";
+const minProductPrice = 0;
+const maxProductPrice = 120;
 
 type InitialProductsState = {
   query: string;
   selectedSport: string;
   selectedCategory: string;
   selectedLevels: string[];
+  selectedMinPrice: number;
+  selectedMaxPrice: number;
   sortBy: SortOption;
   hasExplicitFilters: boolean;
 };
@@ -60,16 +64,27 @@ function getInitialProductsState(): InitialProductsState {
   const selectedSport = readSportFromSearchParams(searchParams);
   const selectedCategory = readCategoryFromSearchParams(searchParams);
   const selectedLevels = readLevelsFromSearchParams(searchParams);
+  const selectedMinPrice = readMinPriceFromSearchParams(searchParams);
+  const selectedMaxPrice = readMaxPriceFromSearchParams(searchParams);
   const sortBy = readSortFromSearchParams(searchParams);
+
+  const normalizedMinPrice = Math.min(selectedMinPrice, selectedMaxPrice);
+  const normalizedMaxPrice = Math.max(selectedMinPrice, selectedMaxPrice);
 
   return {
     query,
     selectedSport,
     selectedCategory,
     selectedLevels,
+    selectedMinPrice: normalizedMinPrice,
+    selectedMaxPrice: normalizedMaxPrice,
     sortBy,
     hasExplicitFilters:
-      selectedSport !== "ALL" || selectedCategory !== "ALL" || selectedLevels.length > 0,
+      selectedSport !== "ALL" ||
+      selectedCategory !== "ALL" ||
+      selectedLevels.length > 0 ||
+      normalizedMinPrice !== minProductPrice ||
+      normalizedMaxPrice !== maxProductPrice,
   };
 }
 
@@ -83,6 +98,10 @@ export default function ProductsPage() {
   const [selectedSport, setSelectedSport] = useState(initialStateRef.current.selectedSport);
   const [selectedCategory, setSelectedCategory] = useState(initialStateRef.current.selectedCategory);
   const [selectedLevels, setSelectedLevels] = useState(initialStateRef.current.selectedLevels);
+  const [selectedMinPrice, setSelectedMinPrice] = useState(initialStateRef.current.selectedMinPrice);
+  const [selectedMaxPrice, setSelectedMaxPrice] = useState(initialStateRef.current.selectedMaxPrice);
+  const [debouncedMinPrice, setDebouncedMinPrice] = useState(initialStateRef.current.selectedMinPrice);
+  const [debouncedMaxPrice, setDebouncedMaxPrice] = useState(initialStateRef.current.selectedMaxPrice);
   const [sortBy, setSortBy] = useState<SortOption>(initialStateRef.current.sortBy);
   const [shareFeedback, setShareFeedback] = useState<ShareFeedback>("idle");
 
@@ -184,6 +203,19 @@ export default function ProductsPage() {
   }, [categories, levels, query, sports]);
 
   useEffect(() => {
+    const timeoutId = globalThis.window?.setTimeout(() => {
+      setDebouncedMinPrice(selectedMinPrice);
+      setDebouncedMaxPrice(selectedMaxPrice);
+    }, 260);
+
+    return () => {
+      if (timeoutId !== undefined) {
+        globalThis.window?.clearTimeout(timeoutId);
+      }
+    };
+  }, [selectedMaxPrice, selectedMinPrice]);
+
+  useEffect(() => {
     const requestId = latestRequestIdRef.current + 1;
     latestRequestIdRef.current = requestId;
 
@@ -198,6 +230,12 @@ export default function ProductsPage() {
           }
           if (level) {
             params.set("level", level);
+          }
+          if (debouncedMinPrice > minProductPrice) {
+            params.set("minPrice", String(debouncedMinPrice));
+          }
+          if (debouncedMaxPrice < maxProductPrice) {
+            params.set("maxPrice", String(debouncedMaxPrice));
           }
 
           const url = params.toString() ? `/api/products?${params.toString()}` : "/api/products";
@@ -218,7 +256,12 @@ export default function ProductsPage() {
         const merged = resolved.flat();
         const normalized = normalizeApiProducts(merged);
         setApiProducts(normalized);
-        if (selectedSport === "ALL" && selectedLevels.length === 0) {
+        if (
+          selectedSport === "ALL" &&
+          selectedLevels.length === 0 &&
+          debouncedMinPrice === minProductPrice &&
+          debouncedMaxPrice === maxProductPrice
+        ) {
           setTotalProductsCount(normalized.length);
         }
       } catch {
@@ -227,7 +270,7 @@ export default function ProductsPage() {
     };
 
     void fetchFilteredProducts();
-  }, [selectedLevels, selectedSport]);
+  }, [selectedLevels, selectedSport, debouncedMinPrice, debouncedMaxPrice]);
 
   const filteredProducts = useMemo(() => {
     const filtered = apiProducts.filter((product) => {
@@ -236,8 +279,10 @@ export default function ProductsPage() {
       const matchesLevel =
         selectedLevels.length === 0 ||
         selectedLevels.some((level) => product.levels.includes(level));
+      const matchesPrice =
+        product.price >= selectedMinPrice && product.price <= selectedMaxPrice;
 
-      if (!matchesSport || !matchesCategory || !matchesLevel) {
+      if (!matchesSport || !matchesCategory || !matchesLevel || !matchesPrice) {
         return false;
       }
 
@@ -289,6 +334,8 @@ export default function ProductsPage() {
     normalizedQuery,
     selectedCategory,
     selectedLevels,
+    selectedMinPrice,
+    selectedMaxPrice,
     selectedSport,
     sortBy,
     sportNameByKey,
@@ -328,6 +375,12 @@ export default function ProductsPage() {
     if (selectedLevels.length > 0) {
       searchParams.set("levels", selectedLevels.join(","));
     }
+    if (selectedMinPrice > minProductPrice) {
+      searchParams.set("minPrice", String(selectedMinPrice));
+    }
+    if (selectedMaxPrice < maxProductPrice) {
+      searchParams.set("maxPrice", String(selectedMaxPrice));
+    }
     if (sortBy !== "relevance") {
       searchParams.set("sort", sortBy);
     }
@@ -346,7 +399,15 @@ export default function ProductsPage() {
       : windowObject.location.pathname;
 
     windowObject.history.replaceState(null, "", nextUrl);
-  }, [query, selectedCategory, selectedLevels, selectedSport, sortBy]);
+  }, [
+    query,
+    selectedCategory,
+    selectedLevels,
+    selectedMinPrice,
+    selectedMaxPrice,
+    selectedSport,
+    sortBy,
+  ]);
 
   const scheduleShareFeedbackReset = (nextFeedback: ShareFeedback) => {
     setShareFeedback(nextFeedback);
@@ -390,6 +451,8 @@ export default function ProductsPage() {
     setSelectedSport("ALL");
     setSelectedCategory("ALL");
     setSelectedLevels([]);
+    setSelectedMinPrice(minProductPrice);
+    setSelectedMaxPrice(maxProductPrice);
     setSortBy("relevance");
   };
 
@@ -399,6 +462,16 @@ export default function ProductsPage() {
         ? previous.filter((item) => item !== level)
         : [...previous, level],
     );
+  };
+
+  const handleMinPriceChange = (value: number) => {
+    const nextValue = Math.max(minProductPrice, Math.min(value, selectedMaxPrice));
+    setSelectedMinPrice(nextValue);
+  };
+
+  const handleMaxPriceChange = (value: number) => {
+    const nextValue = Math.min(maxProductPrice, Math.max(value, selectedMinPrice));
+    setSelectedMaxPrice(nextValue);
   };
 
   return (
@@ -482,6 +555,48 @@ export default function ProductsPage() {
                         onClick={() => toggleLevel(level)}
                       />
                     ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] [color:var(--color-primary)]">
+                    Prix
+                  </p>
+                  <div className="mt-2 grid gap-2">
+                    <div className="flex items-center justify-between text-[11px] font-semibold [color:var(--color-primary)]">
+                      <span>{formatPrice(selectedMinPrice)}</span>
+                      <span>{formatPrice(selectedMaxPrice)}</span>
+                    </div>
+                    <div className="relative h-8">
+                      <div className="absolute top-1/2 h-1 w-full -translate-y-1/2 rounded-full bg-[var(--color-primary)]/20" />
+                      <div
+                        className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-[var(--color-primary)]"
+                        style={{
+                          left: `${(selectedMinPrice / maxProductPrice) * 100}%`,
+                          right: `${100 - (selectedMaxPrice / maxProductPrice) * 100}%`,
+                        }}
+                      />
+                      <input
+                        type="range"
+                        min={minProductPrice}
+                        max={maxProductPrice}
+                        step={1}
+                        value={selectedMinPrice}
+                        onChange={(event) => handleMinPriceChange(Number(event.target.value))}
+                        aria-label="Prix minimum"
+                        className="pointer-events-none absolute inset-0 w-full appearance-none bg-transparent [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-[var(--color-primary)] [&::-webkit-slider-thumb]:bg-[var(--color-secondary)] [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-[var(--color-primary)] [&::-moz-range-thumb]:bg-[var(--color-secondary)]"
+                      />
+                      <input
+                        type="range"
+                        min={minProductPrice}
+                        max={maxProductPrice}
+                        step={1}
+                        value={selectedMaxPrice}
+                        onChange={(event) => handleMaxPriceChange(Number(event.target.value))}
+                        aria-label="Prix maximum"
+                        className="pointer-events-none absolute inset-0 w-full appearance-none bg-transparent [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-[var(--color-primary)] [&::-webkit-slider-thumb]:bg-[var(--color-secondary)] [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-[var(--color-primary)] [&::-moz-range-thumb]:bg-[var(--color-secondary)]"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -679,6 +794,34 @@ function readLevelsFromSearchParams(searchParams: URLSearchParams): string[] {
   );
 
   return allLevels.filter((level) => requestedLevels.has(level));
+}
+
+function readMinPriceFromSearchParams(searchParams: URLSearchParams): number {
+  const value = searchParams.get("minPrice");
+  if (!value) {
+    return minProductPrice;
+  }
+
+  const parsedValue = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsedValue)) {
+    return minProductPrice;
+  }
+
+  return Math.max(minProductPrice, Math.min(maxProductPrice, parsedValue));
+}
+
+function readMaxPriceFromSearchParams(searchParams: URLSearchParams): number {
+  const value = searchParams.get("maxPrice");
+  if (!value) {
+    return maxProductPrice;
+  }
+
+  const parsedValue = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsedValue)) {
+    return maxProductPrice;
+  }
+
+  return Math.max(minProductPrice, Math.min(maxProductPrice, parsedValue));
 }
 
 function readSortFromSearchParams(searchParams: URLSearchParams): SortOption {
