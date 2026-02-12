@@ -1,4 +1,5 @@
-import { getProductById } from "../data/products";
+import { useEffect, useRef, useState } from "react";
+import { getProductById, type Product } from "../data/products";
 
 const levelLabelMap: Record<string, string> = {
   BEGINNER: "Debutant",
@@ -18,8 +19,71 @@ type ProductDetailsPageProps = Readonly<{
   productId: string;
 }>;
 
+type ApiProduct = {
+  id: string;
+  sports: string[];
+  levels: string[];
+  name: string;
+  price: string | number;
+  card_image?: string | null;
+};
+
 export default function ProductDetailsPage({ productId }: ProductDetailsPageProps) {
-  const product = getProductById(productId);
+  const [product, setProduct] = useState<Product | null>(() => getProductById(productId) ?? null);
+  const [isLoading, setIsLoading] = useState(true);
+  const latestRequestIdRef = useRef(0);
+
+  useEffect(() => {
+    const requestId = latestRequestIdRef.current + 1;
+    latestRequestIdRef.current = requestId;
+
+    const fallback = getProductById(productId) ?? null;
+    setProduct(fallback);
+    setIsLoading(true);
+
+    const fetchProduct = async () => {
+      try {
+        const response = await fetch(
+          `/api/products/:product_id?product_id=${encodeURIComponent(productId)}`,
+        );
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            if (requestId === latestRequestIdRef.current) {
+              setProduct(null);
+            }
+            return;
+          }
+          throw new Error("details");
+        }
+
+        const row = (await response.json()) as ApiProduct;
+        if (requestId !== latestRequestIdRef.current) {
+          return;
+        }
+
+        setProduct(normalizeApiProduct(row));
+      } catch {
+        // Keep local fallback data if API is unavailable.
+      } finally {
+        if (requestId === latestRequestIdRef.current) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void fetchProduct();
+  }, [productId]);
+
+  if (isLoading && !product) {
+    return (
+      <main className="mx-auto w-full max-w-6xl px-4 py-8 md:px-6 md:py-12">
+        <section className="rounded-[28px] border border-[var(--color-primary)] bg-[var(--color-secondary)] p-8 text-center shadow-sm">
+          <p className="text-sm [color:var(--color-primary)]">Chargement du produit...</p>
+        </section>
+      </main>
+    );
+  }
 
   if (!product) {
     return (
@@ -129,6 +193,23 @@ export default function ProductDetailsPage({ productId }: ProductDetailsPageProp
       </section>
     </main>
   );
+}
+
+function normalizeApiProduct(row: ApiProduct): Product {
+  const fallback = getProductById(row.id);
+  const parsedPrice =
+    typeof row.price === "number" ? row.price : Number.parseFloat(String(row.price));
+
+  return {
+    id: row.id,
+    category: fallback?.category ?? "MATERIEL",
+    sports: row.sports,
+    levels: row.levels,
+    name: row.name,
+    description: fallback?.description ?? "",
+    price: Number.isFinite(parsedPrice) ? parsedPrice : fallback?.price ?? 0,
+    images: fallback?.images ?? (row.card_image ? [row.card_image] : []),
+  };
 }
 
 function formatPrice(price: number): string {
