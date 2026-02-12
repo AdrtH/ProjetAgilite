@@ -17,20 +17,43 @@ class LoginInput(Schema):
     name :str
     password:str
 
+def product_to_response(product):
+    return {
+        "id": product.id,
+        "sports": list(product.sports.values_list("sport", flat=True)),
+        "levels": list(product.levels.values_list("level", flat=True)),
+        "name": product.name,
+        "price": product.price,
+        "card_image": product.card_image,
+    }
+
 # Create your views here.
 @api.get("/products")
-def get_product(request):
+def get_product(request, sport:str = None, level:str = None, minPrice:int = None, maxPrice:int = None):
     products = Product.objects.all()
+
+    # Filtrage
+    if sport != None:
+        products = products.filter(sports__sport__icontains=sport)
+    if level != None:
+        products = products.filter(levels__level__icontains=level)
+    if minPrice != None:
+        products = products.filter(price__gte = minPrice)
+    if maxPrice != None:
+        products = products.filter(price__lte = maxPrice)
+
     result = [
-        {
-            "id": product.id,
-            "sports": list(product.sports.values_list("sport", flat=True)),
-            "levels": list(product.levels.values_list("level", flat=True)),
-            "name": product.name
-        }
+        product_to_response(product)
         for product in products
     ]
     return JsonResponse(result, safe=False)
+
+@api.get("/products/:product_id")
+def get_product_by_id(request, product_id):
+    product = Product.objects.filter(id=product_id).first()
+    if product is None:
+        return JsonResponse({"error": "Could not find product"}, status=404)
+    return JsonResponse(product_to_response(product))
 
 #Récupère tous les sports
 @api.get("/sports")
@@ -65,4 +88,3 @@ def login(request,payload:LoginInput):
                 return JsonResponse({'bravo : ' : i.id},status=200)
             else:return JsonResponse({'error : ' :'utilisateurs ou mot de passe non valide'},status=400)
     return JsonResponse({'error : ' : 'utilisateurs ou mot de passe non valide'},status=400)
-
