@@ -12,6 +12,18 @@ class UserInput(Schema):
     sport:str
     niveauSportif:str
 
+
+def product_to_response(product):
+    return {
+        "id": product.id,
+        "sports": list(product.sports.values_list("sport", flat=True)),
+        "levels": list(product.levels.values_list("level", flat=True)),
+        "name": product.name,
+        "price": product.price,
+        "card_image": product.card_image,
+    }
+    
+
 # Create your views here.
 @api.get("/products")
 def get_product(request, sport:str = None, level:str = None, minPrice:int = None, maxPrice:int = None):
@@ -28,17 +40,17 @@ def get_product(request, sport:str = None, level:str = None, minPrice:int = None
         products = products.filter(price__lte = maxPrice)
 
     result = [
-        {
-            "id": product.id,
-            "sports": list(product.sports.values_list("sport", flat=True)),
-            "levels": list(product.levels.values_list("level", flat=True)),
-            "name": product.name,
-            "price": product.price,
-            "card_image": product.card_image,
-        }
+        product_to_response(product)
         for product in products
     ]
     return JsonResponse(result, safe=False)
+
+@api.get("/products/:product_id")
+def get_product_by_id(request, product_id):
+    product = Product.objects.filter(id=product_id).first()
+    if product is None:
+        return JsonResponse({"error": "Could not find product"}, status=404)
+    return JsonResponse(product_to_response(product))
 
 #Récupère tous les sports
 @api.get("/sports")
