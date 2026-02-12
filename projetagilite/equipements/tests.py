@@ -1,12 +1,11 @@
 from django.test import TestCase, Client
 from django.urls import reverse
-from equipements.models import Product, SportLevelProductRelation, SportProductRelation, SportLevel, Sport, Stock
-from django.core.exceptions import ValidationError
+from equipements.models import Product, ProductLevels, ProductSports, SportLevel, Sport
 from equipements.views import get_product
 import json
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from equipements.models import Product
+from equipements.models import Product,User
 
 # Create your tests here.
 
@@ -14,54 +13,60 @@ class ProductModelTest(TestCase):
 
     def test_create_product_with_all_fields(self):
         product = Product.objects.create(
+            id="laptop",
             name="Laptop",
             price=999.99,
-            image="https://example.com/image.jpg"
+            card_image="https://example.com/card_image.jpg"
         )
         self.assertEqual(product.name, "Laptop")
         self.assertEqual(product.price, 999.99)
-        self.assertEqual(product.image, "https://example.com/image.jpg")
+        self.assertEqual(product.card_image, "https://example.com/card_image.jpg")
 
     def test_create_product_with_missing_price(self):
         product = Product.objects.create(
+            id="laptop",            
             name="Laptop",
-            image="https://example.com/image.jpg"
+            card_image="https://example.com/card_image.jpg"
         )
         self.assertEqual(product.name, "Laptop")
         self.assertEqual(product.price, 0.00)  # Default price
-        self.assertEqual(product.image, "https://example.com/image.jpg")
+        self.assertEqual(product.card_image, "https://example.com/card_image.jpg")
 
     def test_create_product_with_missing_name(self):
         with self.assertRaises(ValidationError):
             product = Product.objects.create(
+                id="laptop",
                 price=999.99,
-                image="https://example.com/image.jpg"
+                card_image="https://example.com/card_image.jpg"
             )
             product.full_clean()  # Trigger validation
 
-    def test_create_product_with_missing_image_url(self):
+    def test_create_product_with_missing_card_image_url(self):
         product = Product.objects.create(
+            id="Mouse",
             name="Mouse",
             price=29.90
         )
-        self.assertEqual(product.image, None)
+        self.assertEqual(product.card_image, None)
 
     def test_create_product_with_invalid_price(self):
         product = Product(
+            id="laptop",
             name="Laptop",
             price=-10.00,
-            image="https://example.com/image.jpg"
+            card_image="https://example.com/card_image.jpg"
         )
 
         with self.assertRaises(ValidationError):
             product.full_clean()
     
-    def test_create_product_with_invalid_image_url(self):
+    def test_create_product_with_invalid_card_image_url(self):
         with self.assertRaises(ValidationError):
             product = Product.objects.create(
+                id="laptop",
                 name="Laptop",
                 price=999.99,
-                image="not-a-valid-url"  # Invalid URL
+                card_image="not-a-valid-url"  # Invalid URL
             )
             product.full_clean()  # Trigger validation
 
@@ -71,62 +76,215 @@ class TestGetProduct(TestCase):
     def setUp(cls):
         cls.client = Client()
         
-        chaussure = Product.objects.create(name="chaussure", price=50.00)
-        raquette = Product.objects.create(name="raquette", price=25.00)
+        chaussure = Product.objects.create(id="1", name="chaussure")
+        raquette = Product.objects.create(id="2", name="raquette")
 
-        SportProductRelation.objects.create(product=chaussure, sport="BADMINTON")
-        SportProductRelation.objects.create(product=raquette, sport="BADMINTON")
+        ProductSports.objects.create(product=chaussure, sport="BADMINTON")
+        ProductSports.objects.create(product=raquette, sport="BADMINTON")
         
-        SportLevelProductRelation.objects.create(product=chaussure, level="BEGINNER")
-        SportLevelProductRelation.objects.create(product=chaussure, level="AVERAGE")
-        SportLevelProductRelation.objects.create(product=chaussure, level="EXPERT")
+        ProductLevels.objects.create(product=chaussure, level="BEGINNER")
+        ProductLevels.objects.create(product=chaussure, level="AVERAGE")
+        ProductLevels.objects.create(product=chaussure, level="EXPERT")
         
-        SportLevelProductRelation.objects.create(product=raquette, level="AVERAGE")
+        ProductLevels.objects.create(product=raquette, level="AVERAGE")
 
     def test_get_all_products(self):
         response = self.client.get("/products")
         json_response = json.loads(response.content.decode("utf-8"))
         self.assertEqual([
             {
-                "id": 1,
-                "levels": ["BEGINNER", "AVERAGE", "EXPERT"],
+                "id": "1",
+                "levels": ["AVERAGE", "BEGINNER", "EXPERT"],
                 "sports": ["BADMINTON"],
-                "name": "chaussure"
+                "name": "chaussure",
+                "price": "0.00",
+                "card_image": None
             },
             {
-                "id": 2,
+                "id": "2",
                 "levels": ["AVERAGE"],
                 "sports": ["BADMINTON"],
-                "name": "raquette"
+                "name": "raquette",
+                "price": "0.00",
+                "card_image": None
             }
         ], json_response)
 
     def test_adding_product(self):
-        volant = Product.objects.create(name="volant", price=5.00)
-        SportProductRelation.objects.create(product=volant, sport="BADMINTON")
-        SportLevelProductRelation.objects.create(product=volant, level="BEGINNER")
-        
+        volant = Product.objects.create(id="3", name="volant")
+        ProductSports.objects.create(product=volant, sport="BADMINTON")
+        ProductLevels.objects.create(product=volant, level="BEGINNER")
         response = self.client.get("/products")
         json_response = json.loads(response.content.decode("utf-8"))
         self.assertEqual([
             {
-                "id": 1,
-                "levels": ["BEGINNER", "AVERAGE", "EXPERT"],
+                "id": "1",
+                "levels": ["AVERAGE", "BEGINNER", "EXPERT"],
                 "sports": ["BADMINTON"],
-                "name": "chaussure"
+                "name": "chaussure",
+                "price": "0.00",
+                "card_image": None
             },
             {
-                "id": 2,
+                "id": "2",
                 "levels": ["AVERAGE"],
                 "sports": ["BADMINTON"],
-                "name": "raquette"
+                "name": "raquette",
+                "price": "0.00",
+                "card_image": None
             },
             {
-                "id": 3,
+                "id": "3",
                 "levels": ["BEGINNER"],
                 "sports": ["BADMINTON"],
-                "name": "volant"
+                "name": "volant",
+                "price": "0.00",
+                "card_image": None
             }
+        ], json_response)
+
+class TestGetFilteredProduct(TestCase):
+    @classmethod
+    def setUp(cls):
+        cls.client = Client()
+        
+        chaussure = Product.objects.create(id="1", name="chaussure", price=1000)
+        raquette = Product.objects.create(id="2", name="raquette", price=50)
+        balle = Product.objects.create(id="3", name="balle", price=30)
+
+        ProductSports.objects.create(product=chaussure, sport="BADMINTON") 
+        ProductSports.objects.create(product=raquette, sport="BADMINTON")
+        ProductSports.objects.create(product=balle, sport="BASKETBALL")
+
+        ProductLevels.objects.create(product=chaussure, level="BEGINNER") 
+        ProductLevels.objects.create(product=chaussure, level="AVERAGE") 
+        ProductLevels.objects.create(product=chaussure, level="EXPERT")
+        ProductLevels.objects.create(product=raquette, level="AVERAGE")
+        ProductLevels.objects.create(product=balle, level="AVERAGE")
+        ProductLevels.objects.create(product=balle, level="EXPERT")
+
+    def test_get_all_products(self):
+        response = self.client.get("/products")
+        json_response = json.loads(response.content.decode("utf-8"))
+        self.assertEqual([
+            {
+                "id": "1",
+                "levels": ["AVERAGE", "BEGINNER", "EXPERT"],
+                "sports": ["BADMINTON"],
+                "name": "chaussure",
+                "price": "1000.00",
+                "card_image": None
+            },
+            {
+                "id": "2",
+                "levels": ["AVERAGE"],
+                "sports": ["BADMINTON"],
+                "name": "raquette",
+                "price": "50.00",
+                "card_image": None
+            },
+            {
+                "id": "3",
+                "levels": ["AVERAGE", "EXPERT"],
+                "sports": ["BASKETBALL"],
+                "name": "balle",
+                "price": "30.00",
+                "card_image": None
+            }
+        ], json_response)
+
+    def test_get_all_products_filtered_by_level(self):
+        response = self.client.get("/products?level=EXPERT")
+        json_response = json.loads(response.content.decode("utf-8"))
+        self.assertEqual([
+            {
+                "id": "1",
+                "levels": ["AVERAGE", "BEGINNER", "EXPERT"],
+                "sports": ["BADMINTON"],
+                "name": "chaussure",
+                "price": "1000.00",
+                "card_image": None
+            },
+            {
+                "id": "3",
+                "levels": ["AVERAGE", "EXPERT"],
+                "sports": ["BASKETBALL"],
+                "name": "balle",
+                "price": "30.00",
+                "card_image": None
+            },
+        ], json_response)
+
+    def test_get_products_filtered_by_sport(self):
+        response = self.client.get("/products?sport=BADMINTON")
+        json_response = json.loads(response.content.decode("utf-8"))
+        self.assertEqual([
+            {
+                "id": "1",
+                "levels": ["AVERAGE", "BEGINNER", "EXPERT"],
+                "sports": ["BADMINTON"],
+                "name": "chaussure",
+                "price": "1000.00",
+                "card_image": None
+            },
+            {
+                "id": "2",
+                "levels": ["AVERAGE"],
+                "sports": ["BADMINTON"],
+                "name": "raquette",
+                "price": "50.00",
+                "card_image": None
+            },
+        ], json_response)
+
+    def test_get_products_filtered_by_level_and_sport(self):
+        response = self.client.get("/products?sport=BADMINTON&level=EXPERT")
+        json_response = json.loads(response.content.decode("utf-8"))
+        self.assertEqual([
+            {
+                "id": "1",
+                "levels": ["AVERAGE", "BEGINNER", "EXPERT"],
+                "sports": ["BADMINTON"],
+                "name": "chaussure",
+                "price": "1000.00",
+                "card_image": None
+            }
+        ], json_response)
+
+    def test_get_products_filtered_by_price(self):
+        response = self.client.get("/products?minPrice=10&maxPrice=100")
+        json_response = json.loads(response.content.decode("utf-8"))
+        self.assertEqual([
+            {
+                "id": "2",
+                "levels": ["AVERAGE"],
+                "sports": ["BADMINTON"],
+                "name": "raquette",
+                "price": "50.00",
+                "card_image": None
+            },
+            {
+                "id": "3",
+                "levels": ["AVERAGE", "EXPERT"],
+                "sports": ["BASKETBALL"],
+                "name": "balle",
+                "price": "30.00",
+                "card_image": None
+            }
+        ], json_response)
+
+    def test_get_products_filtered_by_price_and_sport(self):
+        response = self.client.get("/products?minPrice=10&maxPrice=100&sport=Badminton")
+        json_response = json.loads(response.content.decode("utf-8"))
+        self.assertEqual([
+            {
+                "id": "2",
+                "levels": ["AVERAGE"],
+                "sports": ["BADMINTON"],
+                "name": "raquette",
+                "price": "50.00",
+                "card_image": None
+            },
         ], json_response)
 
 class UserModelTest(TestCase):
@@ -157,49 +315,19 @@ class StockModelTest(TestCase):
     def setUp(self):
         self.product = Product.objects.create(
             name="Bike",
-            price=1000.00
+            price=1000.00,
+            stock_count=10
         )
 
     def test_create_stock_valid(self):
-        stock = Stock.objects.create(
-            product=self.product,
-            quantity=10
-        )
-        self.assertEqual(stock.quantity, 10)
-        self.assertEqual(stock.product, self.product)
+        self.assertEqual(self.product.stock_count, 10)
 
     def test_stock_quantity_cannot_be_negative(self):
-        stock = Stock(
-            product=self.product,
-            quantity=-5
-        )
+        Product.objects.filter(name=self.product.name).update(stock_count=-5)
 
         with self.assertRaises(ValidationError):
-            stock.full_clean()
-
-    def test_stock_str_representation(self):
-        stock = Stock.objects.create(
-            product=self.product,
-            quantity=5
-        )
-        self.assertEqual(str(stock), "Bike - 5")
-
-    def test_stock_requires_product(self):
-        stock = Stock(quantity=5)
-
-        with self.assertRaises(ValidationError):
-            stock.full_clean()
-
-    def test_delete_product_cascades_to_stock(self):
-        stock = Stock.objects.create(
-            product=self.product,
-            quantity=5
-        )
-
-        self.product.delete()
-
-        self.assertEqual(Stock.objects.count(), 0)
-
+            product = Product.objects.get(name=self.product.name)
+            product.full_clean()  # Trigger validation
 
 class TestGetSports(TestCase):
     def test_get_all_sports(self):
@@ -207,8 +335,70 @@ class TestGetSports(TestCase):
         json_response = json.loads(response.content.decode('utf-8'))
         self.assertEqual([
             {
-                "key": "BAD",
+                "key": "BADMINTON",
                 "name": "Badminton"
+            },
+            {
+                "key": "BASKETBALL",
+                "name": "Basketball"
+            },
+            {
+                "key": "YOGA",
+                "name": "YOGA"
+            },
+            {
+                "key": "NATATION",
+                "name": "NATATION"
+            },
+            {
+                "key": "MUSCULATION",
+                "name": "MUSCULATION"
+            },
+            {
+                "key": "CYCLISME",
+                "name": "CYCLISME"
+            },
+            {
+                "key": "FOOTBALL",
+                "name": "FOOTBALL"
+            },
+            {
+                "key": "RANDONNEE",
+                "name": "RANDONNEE"
+            },
+            {
+                "key": "RUNNING",
+                "name": "RUNNING"
+            },
+            {
+                "key": "TENNIS",
+                "name": "TENNIS"
             }
         ], json_response)
 
+class TestPostRegister(TestCase):
+
+    def test_register_new_user(self):
+        response = self.client.post("/register", json.dumps({
+            "name": "charlie",
+            "password": "test1234",
+            "sport": "BADMINTON",
+            "niveauSportif": "AVERAGE"
+        }), content_type="application/json")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content.decode("utf-8"), '"success"')
+        self.assertTrue(User.objects.filter(username="charlie").exists())
+
+    def test_register_existing_user(self):
+        User.objects.create_user(username="dave", password="test1234")
+
+        response = self.client.post("/register", json.dumps({
+            "name": "dave",
+            "password": "test1234",
+            "sport": "BADMINTON",
+            "niveauSportif": "AVERAGE"
+        }), content_type="application/json")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {'error': 'Utilisateur existant'})
