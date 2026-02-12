@@ -7,10 +7,38 @@ type ApiUser = {
   level: string;
 };
 
+type ApiSport = {
+  key: string;
+  name: string;
+};
+
+const levelOptions = ["Debutant", "Intermediaire", "Confirme", "Expert"];
+const fallbackSports = [
+  "BADMINTON",
+  "BASKETBALL",
+  "YOGA",
+  "NATATION",
+  "MUSCULATION",
+  "CYCLISME",
+  "FOOTBALL",
+  "RANDONNEE",
+  "RUNNING",
+  "TENNIS",
+];
+
 export default function ProfilePage() {
   const [user, setUser] = useState<ApiUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveErrorMessage, setSaveErrorMessage] = useState("");
+  const [sportOptions, setSportOptions] = useState<string[]>(fallbackSports);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    sport: "",
+    level: "",
+  });
 
   useEffect(() => {
     const loadUser = async () => {
@@ -39,11 +67,105 @@ export default function ProfilePage() {
     void loadUser();
   }, []);
 
+  useEffect(() => {
+    const fetchSports = async () => {
+      try {
+        const response = await fetch("/api/sports");
+        if (!response.ok) {
+          throw new Error("sports");
+        }
+
+        const rows = (await response.json()) as ApiSport[];
+        if (rows.length === 0) {
+          return;
+        }
+
+        setSportOptions(rows.map((row) => row.key));
+      } catch {
+        // Keep fallback values.
+      }
+    };
+
+    void fetchSports();
+  }, []);
+
   const initials = useMemo(() => {
     const name = user?.name ?? sessionStorage.getItem("auth_name") ?? "";
     const first = name.trim().charAt(0).toUpperCase();
     return first || "U";
   }, [user?.name]);
+
+  const openEditModal = () => {
+    if (!user) {
+      return;
+    }
+
+    setSaveErrorMessage("");
+    setEditForm({
+      name: user.name,
+      sport: user.sport,
+      level: user.level,
+    });
+    setIsModalOpen(true);
+  };
+
+  const closeEditModal = () => {
+    if (isSaving) {
+      return;
+    }
+    setIsModalOpen(false);
+  };
+
+  const saveProfile = async () => {
+    if (!user) {
+      return;
+    }
+
+    const payload = {
+      name: editForm.name.trim().toLowerCase(),
+      sport: editForm.sport.trim(),
+      level: editForm.level.trim(),
+    };
+
+    if (!payload.name || !payload.sport || !payload.level) {
+      setSaveErrorMessage("Tous les champs sont obligatoires.");
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveErrorMessage("");
+
+    try {
+      const response = await fetch(`/api/user/:name?name=${encodeURIComponent(user.name)}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error("put-user");
+      }
+
+      setUser((previous) =>
+        previous
+          ? {
+              ...previous,
+              name: payload.name,
+              sport: payload.sport,
+              level: payload.level,
+            }
+          : previous,
+      );
+      sessionStorage.setItem("auth_name", payload.name);
+      setIsModalOpen(false);
+    } catch {
+      setSaveErrorMessage("Impossible de modifier le profil.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -93,6 +215,13 @@ export default function ProfilePage() {
             <h1 className="mt-2 text-3xl font-black text-[var(--color-primary)] md:text-4xl">
               {user.name}
             </h1>
+            <button
+              type="button"
+              onClick={openEditModal}
+              className="mt-3 rounded-full border border-[var(--color-primary)] bg-[var(--color-secondary)] px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-[var(--color-primary)]"
+            >
+              Modifier mon profil
+            </button>
           </div>
         </div>
       </section>
@@ -161,6 +290,13 @@ export default function ProfilePage() {
           </h2>
           <div className="mt-4 flex flex-col gap-3">
             <a
+              href={buildRecommendationsHref(user)}
+              className="inline-flex items-center gap-2 rounded-full border border-[var(--color-primary)] bg-[var(--color-secondary)] px-5 py-2 text-sm font-semibold [color:var(--color-primary)]"
+            >
+              <CompassIcon />
+              Voir mes recommandations
+            </a>
+            <a
               href="/products"
               className="inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold [color:var(--color-secondary)] [background:var(--color-primary)]"
             >
@@ -170,6 +306,100 @@ export default function ProfilePage() {
           </div>
         </article>
       </section>
+
+      {isModalOpen ? (
+        <div
+          className="fixed inset-0 z-40 grid place-items-center bg-black/35 px-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Modifier le profil"
+        >
+          <div className="w-full max-w-md rounded-2xl border border-[var(--color-primary)] bg-[var(--color-secondary)] p-5 shadow-xl">
+            <h2 className="text-2xl font-bold text-[var(--color-primary)]">Modifier mon profil</h2>
+            <p className="mt-1 text-sm [color:var(--color-primary)]">
+              Mettez a jour vos informations utilisateur.
+            </p>
+
+            <form
+              className="mt-4 grid gap-3"
+              onSubmit={async (event) => {
+                event.preventDefault();
+                if (isSaving) {
+                  return;
+                }
+                await saveProfile();
+              }}
+            >
+              <label className="grid gap-1.5">
+                <span className="text-xs font-bold text-[var(--color-primary)]">E-mail</span>
+                <input
+                  className="w-full rounded-xl border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-2.5 text-[var(--color-primary)] outline-none"
+                  type="email"
+                  value={editForm.name}
+                  onChange={(event) =>
+                    setEditForm((prev) => ({ ...prev, name: event.target.value }))
+                  }
+                />
+              </label>
+
+              <label className="grid gap-1.5">
+                <span className="text-xs font-bold text-[var(--color-primary)]">Sport</span>
+                <select
+                  className="w-full rounded-xl border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-2.5 text-[var(--color-primary)] outline-none"
+                  value={editForm.sport}
+                  onChange={(event) =>
+                    setEditForm((prev) => ({ ...prev, sport: event.target.value }))
+                  }
+                >
+                  {sportOptions.map((sport) => (
+                    <option key={sport} value={sport}>
+                      {sport}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="grid gap-1.5">
+                <span className="text-xs font-bold text-[var(--color-primary)]">Niveau</span>
+                <select
+                  className="w-full rounded-xl border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-2.5 text-[var(--color-primary)] outline-none"
+                  value={editForm.level}
+                  onChange={(event) =>
+                    setEditForm((prev) => ({ ...prev, level: event.target.value }))
+                  }
+                >
+                  {levelOptions.map((level) => (
+                    <option key={level} value={level}>
+                      {level}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              {saveErrorMessage ? (
+                <p className="text-xs font-bold text-red-700">{saveErrorMessage}</p>
+              ) : null}
+
+              <div className="mt-2 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={closeEditModal}
+                  className="rounded-full border border-[var(--color-primary)] bg-[var(--color-secondary)] px-4 py-2 text-xs font-bold uppercase tracking-wide text-[var(--color-primary)]"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="rounded-full bg-[var(--color-primary)] px-4 py-2 text-xs font-bold uppercase tracking-wide text-[var(--color-secondary)] disabled:opacity-50"
+                >
+                  {isSaving ? "Enregistrement..." : "Enregistrer"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }
@@ -262,4 +492,36 @@ function IconBadge({ children }: IconBadgeProps) {
       {children}
     </span>
   );
+}
+
+function buildRecommendationsHref(user: ApiUser): string {
+  const sport = user.sport.trim().toUpperCase();
+  const level = mapProfileLevelToProductsLevel(user.level);
+  return `/products?sport=${encodeURIComponent(sport)}&levels=${encodeURIComponent(level)}`;
+}
+
+function mapProfileLevelToProductsLevel(level: string): string {
+  const normalized = level.trim().toUpperCase();
+
+  if (normalized === "BEGINNER" || normalized === "AVERAGE" || normalized === "EXPERT") {
+    return normalized;
+  }
+
+  if (normalized === "DEBUTANT") {
+    return "BEGINNER";
+  }
+
+  if (normalized === "INTERMEDIAIRE") {
+    return "AVERAGE";
+  }
+
+  if (normalized === "CONFIRME") {
+    return "BEGINNER";
+  }
+
+  if (normalized === "EXPERT") {
+    return "EXPERT";
+  }
+
+  return "BEGINNER";
 }
