@@ -59,7 +59,10 @@ export default function ProductsPage() {
   );
   const latestRequestIdRef = useRef(0);
 
-  const sports = sportOptions.map((sport) => sport.key);
+  const sports = useMemo(
+    () => sportOptions.map((sport) => sport.key),
+    [sportOptions],
+  );
   const sportNameByKey = useMemo(
     () =>
       Object.fromEntries(
