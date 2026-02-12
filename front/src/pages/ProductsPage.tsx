@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { mockProducts, type Product } from "../data/products";
+import { useLanguage } from "../i18n/useLanguage";
 
 const levelLabelMap: Record<string, string> = {
   BEGINNER: "Debutant",
@@ -74,6 +75,8 @@ function getInitialProductsState(): InitialProductsState {
 }
 
 export default function ProductsPage() {
+  const { language, t } = useLanguage();
+
   const initialStateRef = useRef<InitialProductsState | null>(null);
   if (initialStateRef.current === null) {
     initialStateRef.current = getInitialProductsState();
@@ -244,10 +247,15 @@ export default function ProductsPage() {
       const searchableText = [
         product.name,
         product.description,
+        t(product.name),
+        t(product.description),
         product.category,
+        t(categoryLabelMap[product.category] ?? product.category),
         ...product.sports,
         ...product.sports.map((sport) => sportNameByKey[sport] ?? sport),
+        ...product.sports.map((sport) => t(sportNameByKey[sport] ?? sport)),
         ...product.levels.map((level) => levelLabelMap[level] ?? level),
+        ...product.levels.map((level) => t(levelLabelMap[level] ?? level)),
       ]
         .join(" ")
         .toLowerCase();
@@ -270,11 +278,11 @@ export default function ProductsPage() {
       }
 
       if (sortBy === "name-asc") {
-        return left.name.localeCompare(right.name, "fr");
+        return t(left.name).localeCompare(t(right.name), language === "fr" ? "fr" : "en");
       }
 
       if (!normalizedQuery) {
-        return left.name.localeCompare(right.name, "fr");
+        return t(left.name).localeCompare(t(right.name), language === "fr" ? "fr" : "en");
       }
 
       return (
@@ -292,6 +300,8 @@ export default function ProductsPage() {
     selectedSport,
     sortBy,
     sportNameByKey,
+    language,
+    t,
   ]);
 
   useEffect(() => {
@@ -407,7 +417,7 @@ export default function ProductsPage() {
         <div className="grid gap-8 px-6 py-8 md:px-10 md:py-10">
           <div className="grid gap-3">
             <p className="text-xs font-bold uppercase tracking-[0.18em] [color:var(--color-primary)]">
-              Catalogue Produits
+              {t("Catalogue Produits")}
             </p>
           </div>
 
@@ -415,32 +425,32 @@ export default function ProductsPage() {
             <aside className="h-fit rounded-2xl border border-[var(--color-primary)] bg-[var(--color-secondary)] p-4">
               <div className="mb-4 flex items-center justify-between">
                 <p className="text-sm font-bold uppercase tracking-wide text-[var(--color-primary)]">
-                  Filtres
+                  {t("Filtres")}
                 </p>
                 <button
                   type="button"
                   onClick={resetFilters}
                   className="cursor-pointer text-xs font-semibold [color:var(--color-primary)] underline-offset-2 hover:underline"
                 >
-                  Reinitialiser
+                  {t("Reinitialiser")}
                 </button>
               </div>
 
               <div className="grid gap-4">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.14em] [color:var(--color-primary)]">
-                    Sport
+                    {t("Sport")}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     <FilterChip
-                      label="Tous"
+                      label={t("Tous")}
                       active={selectedSport === "ALL"}
                       onClick={() => setSelectedSport("ALL")}
                     />
                     {sportOptions.map((sport) => (
                       <FilterChip
                         key={sport.key}
-                        label={toSentenceCase(sport.name)}
+                        label={t(toSentenceCase(sport.name))}
                         active={selectedSport === sport.key}
                         onClick={() => setSelectedSport(sport.key)}
                       />
@@ -450,18 +460,18 @@ export default function ProductsPage() {
 
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.14em] [color:var(--color-primary)]">
-                    Categorie
+                    {t("Categorie")}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     <FilterChip
-                      label="Toutes"
+                      label={t("Toutes")}
                       active={selectedCategory === "ALL"}
                       onClick={() => setSelectedCategory("ALL")}
                     />
                     {categories.map((category) => (
                       <FilterChip
                         key={category}
-                        label={categoryLabelMap[category] ?? category}
+                        label={t(categoryLabelMap[category] ?? category)}
                         active={selectedCategory === category}
                         onClick={() => setSelectedCategory(category)}
                       />
@@ -471,13 +481,13 @@ export default function ProductsPage() {
 
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.14em] [color:var(--color-primary)]">
-                    Niveau
+                    {t("Niveau")}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {levels.map((level) => (
                       <FilterChip
                         key={level}
-                        label={levelLabelMap[level] ?? level}
+                        label={t(levelLabelMap[level] ?? level)}
                         active={selectedLevels.includes(level)}
                         onClick={() => toggleLevel(level)}
                       />
@@ -490,7 +500,8 @@ export default function ProductsPage() {
             <div className="grid gap-4">
               <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] [color:var(--color-primary)]">
-                  {filteredProducts.length} resultat{filteredProducts.length > 1 ? "s" : ""} sur{" "}
+                  {filteredProducts.length} {t(filteredProducts.length > 1 ? "resultats" : "resultat")}{" "}
+                  {t("sur")}{" "}
                   {totalProductsCount}
                 </p>
 
@@ -517,13 +528,13 @@ export default function ProductsPage() {
                         id="products-sort"
                         value={sortBy}
                         onChange={(event) => setSortBy(event.target.value as SortOption)}
-                        aria-label="Trier les produits"
+                        aria-label={t("Trier les produits")}
                         className="w-full rounded-lg border border-[var(--color-primary)] bg-[var(--color-secondary)] py-2 pr-2.5 pl-8 text-xs text-[var(--color-primary)] outline-none [&>option]:text-[var(--color-primary)]"
                       >
-                        <option value="relevance">Pertinence</option>
-                        <option value="price-asc">Prix croissant</option>
-                        <option value="price-desc">Prix decroissant</option>
-                        <option value="name-asc">Nom A-Z</option>
+                        <option value="relevance">{t("Pertinence")}</option>
+                        <option value="price-asc">{t("Prix croissant")}</option>
+                        <option value="price-desc">{t("Prix decroissant")}</option>
+                        <option value="name-asc">{t("Nom A-Z")}</option>
                       </select>
                     </div>
 
@@ -532,18 +543,18 @@ export default function ProductsPage() {
                       onClick={() => void handleShare()}
                       className="cursor-pointer rounded-lg border border-[var(--color-primary)] bg-[var(--color-primary)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-secondary)] transition hover:brightness-105"
                     >
-                      Partager
+                      {t("Partager")}
                     </button>
                   </div>
 
                   {shareFeedback === "copied" ? (
                     <p className="text-[11px] font-semibold text-[var(--color-primary)]">
-                      Lien de recherche copie.
+                      {t("Lien de recherche copie.")}
                     </p>
                   ) : null}
                   {shareFeedback === "error" ? (
                     <p className="text-[11px] font-semibold text-[var(--color-primary)]">
-                      Impossible de copier le lien dans ce navigateur.
+                      {t("Impossible de copier le lien dans ce navigateur.")}
                     </p>
                   ) : null}
                 </div>
@@ -552,10 +563,10 @@ export default function ProductsPage() {
               {filteredProducts.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-[var(--color-primary)] bg-[var(--color-secondary)] px-6 py-10 text-center">
                   <p className="text-lg font-semibold text-[var(--color-primary)]">
-                    Aucun produit ne correspond a ta recherche.
+                    {t("Aucun produit ne correspond a ta recherche.")}
                   </p>
                   <p className="mt-2 text-sm [color:var(--color-primary)]">
-                    Essaie avec un autre mot-cle ou modifie les filtres sport/categorie/niveau.
+                    {t("Essaie avec un autre mot-cle ou modifie les filtres sport/categorie/niveau.")}
                   </p>
                 </div>
               ) : (
@@ -570,36 +581,36 @@ export default function ProductsPage() {
                         <div className="-mx-2 -mt-2 mb-4 overflow-hidden rounded-xl">
                           <img
                             src={product.images[0]}
-                            alt={product.name}
+                            alt={t(product.name)}
                             loading="lazy"
                             className="aspect-[4/3] w-full object-cover transition duration-300 group-hover:scale-[1.03]"
                           />
                         </div>
                       ) : (
                         <div className="-mx-2 -mt-2 mb-4 rounded-xl border border-dashed border-[var(--color-primary)] bg-[var(--color-secondary)] px-4 py-10 text-center text-xs font-semibold uppercase tracking-wide [color:var(--color-primary)]">
-                          Image produit
+                          {t("Image produit")}
                         </div>
                       )}
 
                       <div className="flex items-start justify-between gap-3">
                         <span className="rounded-full border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-1 text-xs font-bold uppercase tracking-wide text-[var(--color-primary)]">
-                          {categoryLabelMap[product.category] ?? product.category}
+                          {t(categoryLabelMap[product.category] ?? product.category)}
                         </span>
                         <p className="rounded-[2px] bg-[#f2e933] px-2 py-1 text-lg font-black leading-none text-black">
-                          {formatPrice(product.price)}
+                          {formatPrice(product.price, language)}
                         </p>
                       </div>
 
                       <h2 className="mt-3 text-2xl leading-tight text-[var(--color-primary)] [font-family:'Decathlon Sans','Segoe UI',Tahoma,sans-serif]">
-                        {product.name}
+                        {t(product.name)}
                       </h2>
                       <p className="mt-2 text-sm leading-relaxed [color:var(--color-primary)]">
-                        {product.description}
+                        {t(product.description)}
                       </p>
 
                       <div className="mt-3">
                         <p className="text-[11px] font-semibold uppercase tracking-wide [color:var(--color-primary)]">
-                          Sports
+                          {t("Sports")}
                         </p>
                         <div className="mt-2 flex flex-wrap gap-2">
                           {product.sports.map((sport) => (
@@ -607,7 +618,7 @@ export default function ProductsPage() {
                               key={`${product.id}-sport-${sport}`}
                               className="rounded-full border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-1 text-xs font-semibold text-[var(--color-primary)]"
                             >
-                              {sportNameByKey[sport] ?? sport}
+                              {t(sportNameByKey[sport] ?? sport)}
                             </span>
                           ))}
                         </div>
@@ -615,7 +626,7 @@ export default function ProductsPage() {
 
                       <div className="mt-3">
                         <p className="text-[11px] font-semibold uppercase tracking-wide [color:var(--color-primary)]">
-                          Niveaux
+                          {t("Niveaux")}
                         </p>
                         <div className="mt-2 flex flex-wrap gap-2">
                           {product.levels.map((level) => (
@@ -623,14 +634,14 @@ export default function ProductsPage() {
                               key={`${product.id}-level-${level}`}
                               className="rounded-full bg-[var(--color-primary)] px-3 py-1 text-xs font-semibold text-[var(--color-secondary)]"
                             >
-                              {levelLabelMap[level] ?? level}
+                              {t(levelLabelMap[level] ?? level)}
                             </span>
                           ))}
                         </div>
                       </div>
 
                       <p className="mt-4 text-xs font-bold uppercase tracking-wide [color:var(--color-primary)] transition group-hover:text-[var(--color-primary)]">
-                        Voir le detail produit
+                        {t("Voir le detail produit")}
                       </p>
                     </a>
                   ))}
@@ -751,8 +762,8 @@ function getRelevanceScore(
   return score;
 }
 
-function formatPrice(price: number): string {
-  return new Intl.NumberFormat("fr-FR", {
+function formatPrice(price: number, language: "fr" | "en"): string {
+  return new Intl.NumberFormat(language === "fr" ? "fr-FR" : "en-US", {
     style: "currency",
     currency: "EUR",
   }).format(price);
