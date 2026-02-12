@@ -724,7 +724,7 @@ export default function ProductsPage() {
                             : "bg-red-100 text-red-700"
                         }`}
                       >
-                        {(product.stockCount ?? 1) > 0 ? "En stock" : "Rupture de stock"}
+                        {(product.stockCount ?? 1) > 0 ? t("En stock") : t("Rupture de stock")}
                       </p>
 
                       <h2 className="mt-3 text-2xl leading-tight text-[var(--color-primary)] [font-family:'Decathlon Sans','Segoe UI',Tahoma,sans-serif]">

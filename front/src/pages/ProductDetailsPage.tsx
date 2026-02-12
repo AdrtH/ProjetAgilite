@@ -157,7 +157,7 @@ export default function ProductDetailsPage({ productId }: ProductDetailsPageProp
                     : "bg-red-100 text-red-700"
                 }`}
               >
-                Stock: {Math.max(0, product.stockCount ?? 0)}
+                {t("Stock")}: {Math.max(0, product.stockCount ?? 0)}
               </span>
             </div>
             <p className="rounded-[2px] bg-[#f2e933] px-2.5 py-1 text-2xl font-black leading-none text-black">
