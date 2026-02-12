@@ -16,6 +16,16 @@ const categoryLabelMap: Record<string, string> = {
 };
 
 type SortOption = "relevance" | "price-asc" | "price-desc" | "name-asc";
+type ShareFeedback = "idle" | "copied" | "error";
+
+type InitialProductsState = {
+  query: string;
+  selectedSport: string;
+  selectedCategory: string;
+  selectedLevels: string[];
+  sortBy: SortOption;
+  hasExplicitFilters: boolean;
+};
 
 type ApiProduct = {
   id: string;
@@ -41,16 +51,40 @@ const allCategories = Array.from(
 const allLevels = Array.from(
   new Set(mockProducts.flatMap((product) => product.levels)),
 );
+const sortOptions: SortOption[] = ["relevance", "price-asc", "price-desc", "name-asc"];
+
+function getInitialProductsState(): InitialProductsState {
+  const searchParams = new URLSearchParams(globalThis.window?.location.search ?? "");
+
+  const query = searchParams.get("q")?.trim() ?? "";
+  const selectedSport = readSportFromSearchParams(searchParams);
+  const selectedCategory = readCategoryFromSearchParams(searchParams);
+  const selectedLevels = readLevelsFromSearchParams(searchParams);
+  const sortBy = readSortFromSearchParams(searchParams);
+
+  return {
+    query,
+    selectedSport,
+    selectedCategory,
+    selectedLevels,
+    sortBy,
+    hasExplicitFilters:
+      selectedSport !== "ALL" || selectedCategory !== "ALL" || selectedLevels.length > 0,
+  };
+}
 
 export default function ProductsPage() {
-  const [query, setQuery] = useState(() => {
-    const searchParams = new URLSearchParams(globalThis.window?.location.search ?? "");
-    return searchParams.get("q")?.trim() ?? "";
-  });
-  const [selectedSport, setSelectedSport] = useState("ALL");
-  const [selectedCategory, setSelectedCategory] = useState("ALL");
-  const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState<SortOption>("relevance");
+  const initialStateRef = useRef<InitialProductsState | null>(null);
+  if (initialStateRef.current === null) {
+    initialStateRef.current = getInitialProductsState();
+  }
+
+  const [query, setQuery] = useState(initialStateRef.current.query);
+  const [selectedSport, setSelectedSport] = useState(initialStateRef.current.selectedSport);
+  const [selectedCategory, setSelectedCategory] = useState(initialStateRef.current.selectedCategory);
+  const [selectedLevels, setSelectedLevels] = useState(initialStateRef.current.selectedLevels);
+  const [sortBy, setSortBy] = useState<SortOption>(initialStateRef.current.sortBy);
+  const [shareFeedback, setShareFeedback] = useState<ShareFeedback>("idle");
 
   const [apiProducts, setApiProducts] = useState<Product[]>(mockProducts);
   const [totalProductsCount, setTotalProductsCount] = useState(mockProducts.length);
@@ -58,6 +92,8 @@ export default function ProductsPage() {
     allSports.map((sport) => ({ key: sport, name: sport })),
   );
   const latestRequestIdRef = useRef(0);
+  const ignoreQueryDrivenFiltersRef = useRef(initialStateRef.current.hasExplicitFilters);
+  const shareFeedbackTimeoutRef = useRef<number | null>(null);
 
   const sports = useMemo(
     () => sportOptions.map((sport) => sport.key),
@@ -102,6 +138,10 @@ export default function ProductsPage() {
   }, []);
 
   useEffect(() => {
+    if (ignoreQueryDrivenFiltersRef.current) {
+      return;
+    }
+
     const normalizedText = normalizeSearchText(query);
 
     if (!normalizedText) {
@@ -254,6 +294,97 @@ export default function ProductsPage() {
     sportNameByKey,
   ]);
 
+  useEffect(() => {
+    return () => {
+      const windowObject = globalThis.window;
+      if (!windowObject) {
+        return;
+      }
+
+      if (shareFeedbackTimeoutRef.current !== null) {
+        windowObject.clearTimeout(shareFeedbackTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const windowObject = globalThis.window;
+    if (!windowObject) {
+      return;
+    }
+
+    const searchParams = new URLSearchParams();
+    const normalizedQueryValue = query.trim();
+
+    if (normalizedQueryValue) {
+      searchParams.set("q", normalizedQueryValue);
+    }
+    if (selectedSport !== "ALL") {
+      searchParams.set("sport", selectedSport);
+    }
+    if (selectedCategory !== "ALL") {
+      searchParams.set("category", selectedCategory);
+    }
+    if (selectedLevels.length > 0) {
+      searchParams.set("levels", selectedLevels.join(","));
+    }
+    if (sortBy !== "relevance") {
+      searchParams.set("sort", sortBy);
+    }
+
+    const nextSearch = searchParams.toString();
+    const currentSearch = windowObject.location.search.startsWith("?")
+      ? windowObject.location.search.slice(1)
+      : windowObject.location.search;
+
+    if (nextSearch === currentSearch) {
+      return;
+    }
+
+    const nextUrl = nextSearch
+      ? `${windowObject.location.pathname}?${nextSearch}`
+      : windowObject.location.pathname;
+
+    windowObject.history.replaceState(null, "", nextUrl);
+  }, [query, selectedCategory, selectedLevels, selectedSport, sortBy]);
+
+  const scheduleShareFeedbackReset = (nextFeedback: ShareFeedback) => {
+    setShareFeedback(nextFeedback);
+
+    const windowObject = globalThis.window;
+    if (!windowObject) {
+      return;
+    }
+
+    if (shareFeedbackTimeoutRef.current !== null) {
+      windowObject.clearTimeout(shareFeedbackTimeoutRef.current);
+    }
+
+    shareFeedbackTimeoutRef.current = windowObject.setTimeout(() => {
+      setShareFeedback("idle");
+      shareFeedbackTimeoutRef.current = null;
+    }, 2200);
+  };
+
+  const handleShare = async () => {
+    const windowObject = globalThis.window;
+    if (!windowObject) {
+      return;
+    }
+
+    try {
+      const clipboard = globalThis.navigator?.clipboard;
+      if (!clipboard?.writeText) {
+        throw new Error("clipboard-unavailable");
+      }
+
+      await clipboard.writeText(windowObject.location.href);
+      scheduleShareFeedbackReset("copied");
+    } catch {
+      scheduleShareFeedbackReset("error");
+    }
+  };
+
   const resetFilters = () => {
     setQuery("");
     setSelectedSport("ALL");
@@ -289,7 +420,7 @@ export default function ProductsPage() {
                 <button
                   type="button"
                   onClick={resetFilters}
-                  className="text-xs font-semibold [color:var(--color-primary)] underline-offset-2 hover:underline"
+                  className="cursor-pointer text-xs font-semibold [color:var(--color-primary)] underline-offset-2 hover:underline"
                 >
                   Reinitialiser
                 </button>
@@ -363,35 +494,58 @@ export default function ProductsPage() {
                   {totalProductsCount}
                 </p>
 
-                <div className="relative w-full md:w-44">
-                  <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--color-primary)]">
-                    <svg
-                      aria-hidden="true"
-                      viewBox="0 0 20 20"
-                      fill="none"
-                      className="h-3.5 w-3.5"
+                <div className="flex w-full flex-col gap-2 md:w-auto md:items-end">
+                  <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto">
+                    <div className="relative w-full sm:w-44">
+                      <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--color-primary)]">
+                        <svg
+                          aria-hidden="true"
+                          viewBox="0 0 20 20"
+                          fill="none"
+                          className="h-3.5 w-3.5"
+                        >
+                          <path
+                            d="M3 5h14l-5.4 6.2v3.8l-3.2-1.8v-2z"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </span>
+                      <select
+                        id="products-sort"
+                        value={sortBy}
+                        onChange={(event) => setSortBy(event.target.value as SortOption)}
+                        aria-label="Trier les produits"
+                        className="w-full rounded-lg border border-[var(--color-primary)] bg-[var(--color-secondary)] py-2 pr-2.5 pl-8 text-xs text-[var(--color-primary)] outline-none [&>option]:text-[var(--color-primary)]"
+                      >
+                        <option value="relevance">Pertinence</option>
+                        <option value="price-asc">Prix croissant</option>
+                        <option value="price-desc">Prix decroissant</option>
+                        <option value="name-asc">Nom A-Z</option>
+                      </select>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => void handleShare()}
+                      className="cursor-pointer rounded-lg border border-[var(--color-primary)] bg-[var(--color-primary)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-secondary)] transition hover:brightness-105"
                     >
-                      <path
-                        d="M3 5h14l-5.4 6.2v3.8l-3.2-1.8v-2z"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </span>
-                  <select
-                    id="products-sort"
-                    value={sortBy}
-                    onChange={(event) => setSortBy(event.target.value as SortOption)}
-                    aria-label="Trier les produits"
-                    className="w-full rounded-lg border border-[var(--color-primary)] bg-[var(--color-secondary)] py-2 pr-2.5 pl-8 text-xs text-[var(--color-primary)] outline-none [&>option]:text-[var(--color-primary)]"
-                  >
-                    <option value="relevance">Pertinence</option>
-                    <option value="price-asc">Prix croissant</option>
-                    <option value="price-desc">Prix decroissant</option>
-                    <option value="name-asc">Nom A-Z</option>
-                  </select>
+                      Partager
+                    </button>
+                  </div>
+
+                  {shareFeedback === "copied" ? (
+                    <p className="text-[11px] font-semibold text-[var(--color-primary)]">
+                      Lien de recherche copie.
+                    </p>
+                  ) : null}
+                  {shareFeedback === "error" ? (
+                    <p className="text-[11px] font-semibold text-[var(--color-primary)]">
+                      Impossible de copier le lien dans ce navigateur.
+                    </p>
+                  ) : null}
                 </div>
               </div>
 
@@ -488,6 +642,52 @@ export default function ProductsPage() {
       </section>
     </main>
   );
+}
+
+function readSportFromSearchParams(searchParams: URLSearchParams): string {
+  const sport = searchParams.get("sport")?.trim();
+
+  if (!sport || sport === "ALL") {
+    return "ALL";
+  }
+
+  return sport;
+}
+
+function readCategoryFromSearchParams(searchParams: URLSearchParams): string {
+  const category = searchParams.get("category")?.trim();
+
+  if (!category || category === "ALL") {
+    return "ALL";
+  }
+
+  return allCategories.includes(category) ? category : "ALL";
+}
+
+function readLevelsFromSearchParams(searchParams: URLSearchParams): string[] {
+  const levelsParam = searchParams.get("levels")?.trim();
+
+  if (!levelsParam) {
+    return [];
+  }
+
+  const requestedLevels = new Set(
+    levelsParam
+      .split(",")
+      .map((level) => level.trim())
+      .filter((level) => level.length > 0),
+  );
+
+  return allLevels.filter((level) => requestedLevels.has(level));
+}
+
+function readSortFromSearchParams(searchParams: URLSearchParams): SortOption {
+  const sort = searchParams.get("sort");
+  return isSortOption(sort) ? sort : "relevance";
+}
+
+function isSortOption(value: string | null): value is SortOption {
+  return value !== null && sortOptions.includes(value as SortOption);
 }
 
 function normalizeApiProducts(rows: ApiProduct[]): Product[] {
@@ -594,7 +794,7 @@ function FilterChip({ label, active, onClick }: FilterChipProps) {
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+      className={`cursor-pointer rounded-full border px-3 py-1 text-xs font-semibold transition ${
         active
           ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-secondary)]"
           : "border-[var(--color-primary)] bg-[var(--color-secondary)] text-[var(--color-primary)] hover:bg-[var(--color-secondary)]"
