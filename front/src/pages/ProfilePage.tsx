@@ -1,4 +1,5 @@
 import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { useLanguage } from "../i18n/useLanguage";
 
 type ApiUser = {
   id: number;
@@ -27,6 +28,7 @@ const fallbackSports = [
 ];
 
 export default function ProfilePage() {
+  const { t } = useLanguage();
   const [user, setUser] = useState<ApiUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -171,7 +173,7 @@ export default function ProfilePage() {
     return (
       <main className="mx-auto w-full max-w-6xl px-6 pb-10 pt-12">
         <section className="rounded-3xl border border-[var(--color-primary)] bg-[var(--color-secondary)] p-6 shadow-sm md:p-8">
-          <p className="text-sm [color:var(--color-primary)]">Chargement du profil...</p>
+          <p className="text-sm [color:var(--color-primary)]">{t("Chargement du profil...")}</p>
         </section>
       </main>
     );
@@ -182,16 +184,16 @@ export default function ProfilePage() {
       <main className="mx-auto w-full max-w-6xl px-6 pb-10 pt-12">
         <section className="rounded-3xl border border-[var(--color-primary)] bg-[var(--color-secondary)] p-6 shadow-sm md:p-8">
           <h1 className="text-3xl font-black text-[var(--color-primary)] md:text-4xl">
-            Profil
+            {t("Profil")}
           </h1>
           <p className="mt-3 text-sm [color:var(--color-primary)]">
-            {errorMessage || "Utilisateur non disponible."}
+            {errorMessage ? t(errorMessage) : t("Utilisateur non disponible.")}
           </p>
           <a
             href="/login"
             className="mt-5 inline-block rounded-full border border-[var(--color-primary)] bg-[var(--color-secondary)] px-5 py-2 text-sm font-semibold [color:var(--color-primary)]"
           >
-            Aller a la connexion
+            {t("Aller a la connexion")}
           </a>
         </section>
       </main>
@@ -210,7 +212,7 @@ export default function ProfilePage() {
               <IconBadge>
                 <UserIcon />
               </IconBadge>
-              Profil utilisateur
+              {t("Profil utilisateur")}
             </p>
             <h1 className="mt-2 text-3xl font-black text-[var(--color-primary)] md:text-4xl">
               {user.name}
@@ -220,7 +222,7 @@ export default function ProfilePage() {
               onClick={openEditModal}
               className="mt-3 rounded-full border border-[var(--color-primary)] bg-[var(--color-secondary)] px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-[var(--color-primary)]"
             >
-              Modifier mon profil
+              {t("Modifier mon profil")}
             </button>
           </div>
         </div>
@@ -232,16 +234,16 @@ export default function ProfilePage() {
             <IconBadge>
               <AccountIcon />
             </IconBadge>
-            Compte
+            {t("Compte")}
           </p>
-          <h2 className="mt-2 text-lg font-bold text-[var(--color-primary)]">Informations</h2>
+          <h2 className="mt-2 text-lg font-bold text-[var(--color-primary)]">{t("Informations")}</h2>
           <dl className="mt-4 space-y-3 text-sm">
             <div className="rounded-xl bg-[var(--color-secondary)] p-3">
               <dt className="flex items-center gap-2 [color:var(--color-primary)]">
                 <IconBadge>
                   <MailIcon />
                 </IconBadge>
-                E-mail
+                {t("E-mail")}
               </dt>
               <dd className="mt-1 font-medium text-[var(--color-primary)]">{user.name}</dd>
             </div>
@@ -253,27 +255,27 @@ export default function ProfilePage() {
             <IconBadge>
               <ActivityIcon />
             </IconBadge>
-            Pratique
+            {t("Pratique")}
           </p>
-          <h2 className="mt-2 text-lg font-bold text-[var(--color-primary)]">Profil sportif</h2>
+          <h2 className="mt-2 text-lg font-bold text-[var(--color-primary)]">{t("Profil sportif")}</h2>
           <dl className="mt-4 space-y-3 text-sm">
             <div className="rounded-xl bg-[var(--color-secondary)] p-3">
               <dt className="flex items-center gap-2 [color:var(--color-primary)]">
                 <IconBadge>
                   <SportIcon />
                 </IconBadge>
-                Sport principal
+                {t("Sport principal")}
               </dt>
-              <dd className="mt-1 font-medium text-[var(--color-primary)]">{user.sport}</dd>
+              <dd className="mt-1 font-medium text-[var(--color-primary)]">{t(user.sport)}</dd>
             </div>
             <div className="rounded-xl bg-[var(--color-secondary)] p-3">
               <dt className="flex items-center gap-2 [color:var(--color-primary)]">
                 <IconBadge>
                   <LevelIcon />
                 </IconBadge>
-                Niveau
+                {t("Niveau")}
               </dt>
-              <dd className="mt-1 font-medium text-[var(--color-primary)]">{user.level}</dd>
+              <dd className="mt-1 font-medium text-[var(--color-primary)]">{t(user.level)}</dd>
             </div>
           </dl>
         </article>
@@ -283,25 +285,23 @@ export default function ProfilePage() {
             <IconBadge>
               <CompassIcon />
             </IconBadge>
-            Navigation
+            {t("Navigation")}
           </p>
-          <h2 className="mt-2 text-lg font-bold text-[var(--color-primary)]">
-            Actions rapides
-          </h2>
+          <h2 className="mt-2 text-lg font-bold text-[var(--color-primary)]">{t("Actions rapides")}</h2>
           <div className="mt-4 flex flex-col gap-3">
             <a
               href={buildRecommendationsHref(user)}
               className="inline-flex items-center gap-2 rounded-full border border-[var(--color-primary)] bg-[var(--color-secondary)] px-5 py-2 text-sm font-semibold [color:var(--color-primary)]"
             >
               <CompassIcon />
-              Voir mes recommandations
+              {t("Voir mes recommandations")}
             </a>
             <a
               href="/products"
               className="inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold [color:var(--color-secondary)] [background:var(--color-primary)]"
             >
               <ProductsIcon />
-              Voir les produits
+              {t("Voir les produits")}
             </a>
           </div>
         </article>
@@ -312,12 +312,14 @@ export default function ProfilePage() {
           className="fixed inset-0 z-40 grid place-items-center bg-black/35 px-4"
           role="dialog"
           aria-modal="true"
-          aria-label="Modifier le profil"
+          aria-label={t("Modifier le profil")}
         >
           <div className="w-full max-w-md rounded-2xl border border-[var(--color-primary)] bg-[var(--color-secondary)] p-5 shadow-xl">
-            <h2 className="text-2xl font-bold text-[var(--color-primary)]">Modifier mon profil</h2>
+            <h2 className="text-2xl font-bold text-[var(--color-primary)]">
+              {t("Modifier mon profil")}
+            </h2>
             <p className="mt-1 text-sm [color:var(--color-primary)]">
-              Mettez a jour vos informations utilisateur.
+              {t("Mettez a jour vos informations utilisateur.")}
             </p>
 
             <form
@@ -331,7 +333,7 @@ export default function ProfilePage() {
               }}
             >
               <label className="grid gap-1.5">
-                <span className="text-xs font-bold text-[var(--color-primary)]">E-mail</span>
+                <span className="text-xs font-bold text-[var(--color-primary)]">{t("E-mail")}</span>
                 <input
                   className="w-full rounded-xl border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-2.5 text-[var(--color-primary)] outline-none"
                   type="email"
@@ -343,7 +345,7 @@ export default function ProfilePage() {
               </label>
 
               <label className="grid gap-1.5">
-                <span className="text-xs font-bold text-[var(--color-primary)]">Sport</span>
+                <span className="text-xs font-bold text-[var(--color-primary)]">{t("Sport")}</span>
                 <select
                   className="w-full rounded-xl border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-2.5 text-[var(--color-primary)] outline-none"
                   value={editForm.sport}
@@ -353,14 +355,14 @@ export default function ProfilePage() {
                 >
                   {sportOptions.map((sport) => (
                     <option key={sport} value={sport}>
-                      {sport}
+                      {t(sport)}
                     </option>
                   ))}
                 </select>
               </label>
 
               <label className="grid gap-1.5">
-                <span className="text-xs font-bold text-[var(--color-primary)]">Niveau</span>
+                <span className="text-xs font-bold text-[var(--color-primary)]">{t("Niveau")}</span>
                 <select
                   className="w-full rounded-xl border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-2.5 text-[var(--color-primary)] outline-none"
                   value={editForm.level}
@@ -370,15 +372,13 @@ export default function ProfilePage() {
                 >
                   {levelOptions.map((level) => (
                     <option key={level} value={level}>
-                      {level}
+                      {t(level)}
                     </option>
                   ))}
                 </select>
               </label>
 
-              {saveErrorMessage ? (
-                <p className="text-xs font-bold text-red-700">{saveErrorMessage}</p>
-              ) : null}
+              {saveErrorMessage ? <p className="text-xs font-bold text-red-700">{t(saveErrorMessage)}</p> : null}
 
               <div className="mt-2 flex items-center justify-end gap-2">
                 <button
@@ -386,14 +386,14 @@ export default function ProfilePage() {
                   onClick={closeEditModal}
                   className="rounded-full border border-[var(--color-primary)] bg-[var(--color-secondary)] px-4 py-2 text-xs font-bold uppercase tracking-wide text-[var(--color-primary)]"
                 >
-                  Annuler
+                  {t("Annuler")}
                 </button>
                 <button
                   type="submit"
                   disabled={isSaving}
                   className="rounded-full bg-[var(--color-primary)] px-4 py-2 text-xs font-bold uppercase tracking-wide text-[var(--color-secondary)] disabled:opacity-50"
                 >
-                  {isSaving ? "Enregistrement..." : "Enregistrer"}
+                  {isSaving ? t("Enregistrement...") : t("Enregistrer")}
                 </button>
               </div>
             </form>
@@ -517,10 +517,6 @@ function mapProfileLevelToProductsLevel(level: string): string {
 
   if (normalized === "CONFIRME") {
     return "BEGINNER";
-  }
-
-  if (normalized === "EXPERT") {
-    return "EXPERT";
   }
 
   return "BEGINNER";

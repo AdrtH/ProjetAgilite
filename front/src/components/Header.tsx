@@ -1,6 +1,9 @@
 import { useEffect, useRef } from "react";
+import { useLanguage } from "../i18n/useLanguage";
+import { navigateTo } from "../navigation";
 
 export default function Header() {
+  const { language, setLanguage, t } = useLanguage();
   const searchParams = new URLSearchParams(globalThis.window?.location.search ?? "");
   const currentQuery = searchParams.get("q")?.trim() ?? "";
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -32,31 +35,43 @@ export default function Header() {
     <header className="sticky top-0 z-20 border-b border-[var(--color-primary)] bg-[var(--color-secondary)] backdrop-blur">
       <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-3 px-6 py-4 md:flex-nowrap md:gap-4">
         <a href="/" className="text-lg font-bold [color:var(--color-primary)]">
-          Le Compagnon d'Equipement
+          {t("Le Compagnon d'Equipement")}
         </a>
 
         <form
-          action="/products"
-          method="get"
+          onSubmit={(event) => {
+            event.preventDefault();
+
+            const formData = new FormData(event.currentTarget);
+            const nextQuery = String(formData.get("q") ?? "").trim();
+            const params = new URLSearchParams();
+            if (nextQuery) {
+              params.set("q", nextQuery);
+            }
+
+            const nextHref = params.toString() ? `/products?${params.toString()}` : "/products";
+            navigateTo(nextHref);
+          }}
           autoComplete="off"
           className="order-3 ml-auto w-full max-w-[340px] md:order-none md:w-[300px] lg:w-[340px]"
           role="search"
-          aria-label="Recherche globale produit"
+          aria-label={t("Recherche globale produit")}
         >
           <div className="flex items-center gap-2 rounded-full border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-1.5">
             <input
+              key={currentQuery}
               ref={searchInputRef}
               type="search"
               name="q"
               autoComplete="off"
               defaultValue={currentQuery}
-              placeholder="Rechercher un produit..."
+              placeholder={t("Rechercher un produit...")}
               className="w-full bg-transparent text-sm text-gray-500 outline-none placeholder:text-gray-400"
             />
             <button
               type="submit"
               className="grid h-7 w-7 cursor-pointer place-items-center rounded-full bg-[var(--color-primary)] text-[var(--color-secondary)]"
-              aria-label="Rechercher"
+              aria-label={t("Rechercher")}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -74,36 +89,65 @@ export default function Header() {
           </div>
         </form>
 
-        {isConnected ? (
-          <a
-            href="/profil"
-            className="grid h-10 w-10 place-items-center rounded-full border border-[var(--color-primary)] bg-[var(--color-primary)] [color:var(--color-secondary)]"
-            aria-label="Profil utilisateur"
-            title="Profil"
-          >
-            <span className="relative">
-              <ProfileIcon className="h-5 w-5" />
-              <span className="absolute -bottom-2 -right-2 rounded-full bg-[var(--color-secondary)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--color-primary)]">
-                {profileLetter}
-              </span>
-            </span>
-          </a>
-        ) : (
+        <div className="flex items-center gap-2">
           <div className="flex overflow-hidden rounded-full border border-[var(--color-primary)]">
-            <a
-              href="/login"
-              className="px-4 py-2 text-sm font-semibold [color:var(--color-primary)] [background:var(--color-secondary)] transition hover:bg-gray-50"
+            <button
+              type="button"
+              onClick={() => setLanguage("fr")}
+              aria-pressed={language === "fr"}
+              className={`px-3 py-2 text-xs font-bold uppercase transition ${
+                language === "fr"
+                  ? "[color:var(--color-secondary)] [background:var(--color-primary)]"
+                  : "[color:var(--color-primary)] [background:var(--color-secondary)] hover:bg-gray-50"
+              }`}
             >
-              Connexion
-            </a>
-            <a
-              href="/register"
-              className="border-l border-[var(--color-primary)] px-4 py-2 text-sm font-semibold [color:var(--color-secondary)] [background:var(--color-primary)] transition hover:brightness-110"
+              FR
+            </button>
+            <button
+              type="button"
+              onClick={() => setLanguage("en")}
+              aria-pressed={language === "en"}
+              className={`border-l border-[var(--color-primary)] px-3 py-2 text-xs font-bold uppercase transition ${
+                language === "en"
+                  ? "[color:var(--color-secondary)] [background:var(--color-primary)]"
+                  : "[color:var(--color-primary)] [background:var(--color-secondary)] hover:bg-gray-50"
+              }`}
             >
-              Inscription
-            </a>
+              EN
+            </button>
           </div>
-        )}
+
+          {isConnected ? (
+            <a
+              href="/profil"
+              className="grid h-10 w-10 place-items-center rounded-full border border-[var(--color-primary)] bg-[var(--color-primary)] [color:var(--color-secondary)]"
+              aria-label={t("Profil utilisateur")}
+              title={t("Profil")}
+            >
+              <span className="relative">
+                <ProfileIcon className="h-5 w-5" />
+                <span className="absolute -bottom-2 -right-2 rounded-full bg-[var(--color-secondary)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--color-primary)]">
+                  {profileLetter}
+                </span>
+              </span>
+            </a>
+          ) : (
+            <div className="flex overflow-hidden rounded-full border border-[var(--color-primary)]">
+              <a
+                href="/login"
+                className="px-4 py-2 text-sm font-semibold [color:var(--color-primary)] [background:var(--color-secondary)] transition hover:bg-gray-50"
+              >
+                {t("Connexion")}
+              </a>
+              <a
+                href="/register"
+                className="border-l border-[var(--color-primary)] px-4 py-2 text-sm font-semibold [color:var(--color-secondary)] [background:var(--color-primary)] transition hover:brightness-110"
+              >
+                {t("Inscription")}
+              </a>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );
