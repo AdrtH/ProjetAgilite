@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 
 const highlights = [
   "Créez votre espace pour enregistrer vos préférences sportives.",
@@ -6,84 +6,50 @@ const highlights = [
   "Retrouvez votre profil à tout moment après connexion.",
 ];
 
-type RegisterStep = 1 | 2;
-type MotionPhase = "idle" | "leaving" | "entering";
-type MotionDirection = "forward" | "backward";
+const levelOptions = ["Debutant", "Intermediaire", "Confirme", "Expert"];
 
 export default function RegisterPage() {
-  const [step, setStep] = useState<RegisterStep>(1);
-  const [motionPhase, setMotionPhase] = useState<MotionPhase>("idle");
-  const [motionDirection, setMotionDirection] = useState<MotionDirection>("forward");
-  const timeoutRef = useRef<number[]>([]);
-  const [account, setAccount] = useState({
-    email: "",
+  const [form, setForm] = useState({
+    name: "",
     password: "",
-    confirmPassword: "",
-  });
-  const [profile, setProfile] = useState({
     sport: "",
-    level: "",
-    frequency: "",
-    store: "",
-    budgetMin: "",
-    budgetMax: "",
+    niveauSportif: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const isStepOneValid = useMemo(() => {
+  const isFormValid = useMemo(() => {
     return (
-      account.email.trim() !== "" &&
-      account.password.trim() !== "" &&
-      account.confirmPassword.trim() !== "" &&
-      account.password === account.confirmPassword
+      form.name.trim() !== "" &&
+      form.password.trim() !== "" &&
+      form.sport.trim() !== "" &&
+      form.niveauSportif.trim() !== ""
     );
-  }, [account]);
+  }, [form]);
 
-  const isStepTwoValid = useMemo(() => {
-    const min = Number(profile.budgetMin);
-    const max = Number(profile.budgetMax);
+  const submitRegistration = async () => {
+    let response: Response;
 
-    return (
-      profile.sport.trim() !== "" &&
-      profile.level.trim() !== "" &&
-      profile.frequency.trim() !== "" &&
-      profile.store.trim() !== "" &&
-      profile.budgetMin.trim() !== "" &&
-      profile.budgetMax.trim() !== "" &&
-      Number.isFinite(min) &&
-      Number.isFinite(max) &&
-      max >= min
-    );
-  }, [profile]);
+    try {
+      response = await fetch("/api/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      });
+    } catch {
+      throw new Error("Impossible de contacter le serveur.");
+    }
 
-  const transitionToStep = (nextStep: RegisterStep) => {
-    if (nextStep === step || motionPhase !== "idle") {
+    if (response.ok) {
       return;
     }
 
-    const direction: MotionDirection = nextStep > step ? "forward" : "backward";
-    setMotionDirection(direction);
-    setMotionPhase("leaving");
-
-    const leaveTimeout = window.setTimeout(() => {
-      setStep(nextStep);
-      setMotionPhase("entering");
-
-      const enterTimeout = window.setTimeout(() => {
-        setMotionPhase("idle");
-      }, 240);
-
-      timeoutRef.current.push(enterTimeout);
-    }, 170);
-
-    timeoutRef.current.push(leaveTimeout);
+    const body = (await response.json().catch(() => null)) as { error?: string } | null;
+    const serverError = body?.error ?? "Inscription refusee par le serveur.";
+    throw new Error(serverError);
   };
-
-  useEffect(() => {
-    return () => {
-      timeoutRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
-      timeoutRef.current = [];
-    };
-  }, []);
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8 md:px-6 md:py-12">
@@ -95,9 +61,8 @@ export default function RegisterPage() {
           <h1 className="max-w-[13ch] text-3xl leading-tight [font-family:'Decathlon Sans','Segoe UI',Tahoma,sans-serif] md:text-4xl">
             Créez votre compte
           </h1>
-          <p className="tone-zone max-w-[34ch] text-sm leading-relaxed [color:var(--color-primary)] md:text-base">
-            Inscription front uniquement pour le moment. Aucun envoi de données
-            vers le back.
+          <p className="max-w-[34ch] text-sm leading-relaxed text-[var(--color-secondary)] md:text-base">
+            Créez votre compte en envoyant directement les informations au back.
           </p>
 
           <ul className="grid gap-3 text-sm md:text-base" aria-label="Avantages du compte">
@@ -115,210 +80,115 @@ export default function RegisterPage() {
           aria-label="Formulaire d&apos;inscription"
         >
           <div>
-            <p className="inline-flex rounded-full border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-1 text-xs font-bold uppercase tracking-[0.08em]">
-              Étape {step} sur 2
-            </p>
             <h2 className="mt-3 text-3xl leading-tight [font-family:'Decathlon Sans','Segoe UI',Tahoma,sans-serif]">
               Inscription
             </h2>
-            <p className="tone-zone mt-2 text-sm leading-relaxed [color:var(--color-primary)]">
-              {step === 1
-                ? "Renseignez votre e-mail et votre mot de passe."
-                : "Complétez votre profil sportif et votre budget."}
+            <p className="mt-2 text-sm leading-relaxed text-[var(--color-primary)]">
+              Renseignez les 4 champs attendus par votre API.
             </p>
           </div>
 
           <form
             className="grid gap-3"
             autoComplete="off"
-            onSubmit={(event) => {
+            onSubmit={async (event) => {
               event.preventDefault();
+              if (!isFormValid || isSubmitting) {
+                return;
+              }
 
-              if (step === 1 && isStepOneValid) {
-                transitionToStep(2);
+              setErrorMessage("");
+              setIsSubmitting(true);
+
+              try {
+                await submitRegistration();
+                sessionStorage.setItem(
+                  "auth_notice",
+                  "Compte cree avec succes. Connectez-vous."
+                );
+                window.location.pathname = "/login";
+              } catch (error) {
+                const message =
+                  error instanceof Error ? error.message : "Erreur lors de l'inscription.";
+                setErrorMessage(message);
+              } finally {
+                setIsSubmitting(false);
               }
             }}
           >
-            <div
-              className={`grid gap-3 transition-all duration-200 ease-out ${
-                motionPhase === "idle"
-                  ? "translate-x-0 opacity-100"
-                  : motionPhase === "leaving"
-                    ? `${motionDirection === "forward" ? "-translate-x-4" : "translate-x-4"} pointer-events-none opacity-0`
-                    : `${motionDirection === "forward" ? "translate-x-4" : "-translate-x-4"} opacity-0`
-              }`}
+            <label className="grid gap-1.5">
+              <span className="text-xs font-bold">Email</span>
+              <input
+                className="w-full rounded-xl border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-2.5 text-[var(--color-primary)] outline-none transition placeholder:text-gray-400 focus:border-[var(--color-primary)] focus:ring-0"
+                type="email"
+                autoComplete="off"
+                placeholder="example@gmail.com"
+                value={form.name}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, name: event.target.value }))
+                }
+              />
+            </label>
+
+            <label className="grid gap-1.5">
+              <span className="text-xs font-bold">Mot de passe</span>
+              <input
+                className="w-full rounded-xl border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-2.5 text-[var(--color-primary)] outline-none transition placeholder:text-gray-400 focus:border-[var(--color-primary)] focus:ring-0"
+                type="password"
+                autoComplete="off"
+                placeholder="********"
+                value={form.password}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, password: event.target.value }))
+                }
+              />
+            </label>
+
+            <label className="grid gap-1.5">
+              <span className="text-xs font-bold">Sport</span>
+              <input
+                className="w-full rounded-xl border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-2.5 text-[var(--color-primary)] outline-none transition placeholder:text-gray-400 focus:border-[var(--color-primary)] focus:ring-0"
+                type="text"
+                autoComplete="off"
+                placeholder="Running"
+                value={form.sport}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, sport: event.target.value }))
+                }
+              />
+            </label>
+
+            <label className="grid gap-1.5">
+              <span className="text-xs font-bold">Niveau sportif</span>
+              <select
+                className="w-full rounded-xl border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-2.5 text-[var(--color-primary)] outline-none transition focus:border-[var(--color-primary)] focus:ring-0"
+                value={form.niveauSportif}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, niveauSportif: event.target.value }))
+                }
+              >
+                <option value="" disabled>
+                  Selectionner un niveau
+                </option>
+                {levelOptions.map((level) => (
+                  <option key={level} value={level}>
+                    {level}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {errorMessage ? (
+              <p className="text-xs font-bold text-red-700">{errorMessage}</p>
+            ) : null}
+
+            <button
+              className="mt-1 rounded-xl bg-[var(--color-primary)] px-4 py-3 font-bold text-[var(--color-secondary)] transition active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
+              type="submit"
+              disabled={!isFormValid || isSubmitting}
             >
-              {step === 1 ? (
-              <>
-                <label className="grid gap-1.5">
-                  <span className="text-xs font-bold">E-mail</span>
-                  <input
-                    className="w-full rounded-xl border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-2.5 text-gray-500 outline-none transition placeholder:text-gray-400 focus:border-[var(--color-primary)] focus:ring-0"
-                    type="email"
-                    autoComplete="off"
-                    placeholder="prenom@mail.com"
-                    value={account.email}
-                    onChange={(event) =>
-                      setAccount((prev) => ({ ...prev, email: event.target.value }))
-                    }
-                  />
-                </label>
-
-                <label className="grid gap-1.5">
-                  <span className="text-xs font-bold">Mot de passe</span>
-                  <input
-                    className="w-full rounded-xl border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-2.5 text-gray-500 outline-none transition placeholder:text-gray-400 focus:border-[var(--color-primary)] focus:ring-0"
-                    type="password"
-                    autoComplete="off"
-                    placeholder="********"
-                    value={account.password}
-                    onChange={(event) =>
-                      setAccount((prev) => ({ ...prev, password: event.target.value }))
-                    }
-                  />
-                </label>
-
-                <label className="grid gap-1.5">
-                  <span className="text-xs font-bold">Confirmer le mot de passe</span>
-                  <input
-                    className="w-full rounded-xl border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-2.5 text-gray-500 outline-none transition placeholder:text-gray-400 focus:border-[var(--color-primary)] focus:ring-0"
-                    type="password"
-                    autoComplete="off"
-                    placeholder="********"
-                    value={account.confirmPassword}
-                    onChange={(event) =>
-                      setAccount((prev) => ({
-                        ...prev,
-                        confirmPassword: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-
-                <button
-                  className="mt-1 rounded-xl bg-[var(--color-primary)] px-4 py-3 font-bold text-[var(--color-secondary)] transition active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
-                  type="submit"
-                  disabled={!isStepOneValid}
-                >
-                  Suivant
-                </button>
-              </>
-            ) : (
-              <>
-                <div className="grid gap-3 md:grid-cols-2">
-                  <label className="grid gap-1.5">
-                    <span className="text-xs font-bold">Sport principal</span>
-                    <input
-                      className="w-full rounded-xl border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-2.5 text-gray-500 outline-none transition placeholder:text-gray-400 focus:border-[var(--color-primary)] focus:ring-0"
-                      type="text"
-                      autoComplete="off"
-                      placeholder="Running"
-                      value={profile.sport}
-                      onChange={(event) =>
-                        setProfile((prev) => ({ ...prev, sport: event.target.value }))
-                      }
-                    />
-                  </label>
-                  <label className="grid gap-1.5">
-                    <span className="text-xs font-bold">Niveau</span>
-                    <input
-                      className="w-full rounded-xl border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-2.5 text-gray-500 outline-none transition placeholder:text-gray-400 focus:border-[var(--color-primary)] focus:ring-0"
-                      type="text"
-                      autoComplete="off"
-                      placeholder="Débutant / Confirmé / Expert"
-                      value={profile.level}
-                      onChange={(event) =>
-                        setProfile((prev) => ({ ...prev, level: event.target.value }))
-                      }
-                    />
-                  </label>
-                </div>
-
-                <div className="grid gap-3 md:grid-cols-2">
-                  <label className="grid gap-1.5">
-                    <span className="text-xs font-bold">Fréquence de pratique</span>
-                    <input
-                      className="w-full rounded-xl border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-2.5 text-gray-500 outline-none transition placeholder:text-gray-400 focus:border-[var(--color-primary)] focus:ring-0"
-                      type="text"
-                      autoComplete="off"
-                      placeholder="3 séances par semaine"
-                      value={profile.frequency}
-                      onChange={(event) =>
-                        setProfile((prev) => ({ ...prev, frequency: event.target.value }))
-                      }
-                    />
-                  </label>
-                  <label className="grid gap-1.5">
-                    <span className="text-xs font-bold">Magasin préféré</span>
-                    <input
-                      className="w-full rounded-xl border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-2.5 text-gray-500 outline-none transition placeholder:text-gray-400 focus:border-[var(--color-primary)] focus:ring-0"
-                      type="text"
-                      autoComplete="off"
-                      placeholder="Décathlon Lille"
-                      value={profile.store}
-                      onChange={(event) =>
-                        setProfile((prev) => ({ ...prev, store: event.target.value }))
-                      }
-                    />
-                  </label>
-                </div>
-
-                <div className="grid gap-3 md:grid-cols-2">
-                  <label className="grid gap-1.5">
-                    <span className="text-xs font-bold">Budget minimum (EUR)</span>
-                    <input
-                      className="w-full rounded-xl border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-2.5 text-gray-500 outline-none transition placeholder:text-gray-400 focus:border-[var(--color-primary)] focus:ring-0"
-                      type="number"
-                      autoComplete="off"
-                      min="0"
-                      placeholder="40"
-                      value={profile.budgetMin}
-                      onChange={(event) =>
-                        setProfile((prev) => ({ ...prev, budgetMin: event.target.value }))
-                      }
-                    />
-                  </label>
-                  <label className="grid gap-1.5">
-                    <span className="text-xs font-bold">Budget maximum (EUR)</span>
-                    <input
-                      className="w-full rounded-xl border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-2.5 text-gray-500 outline-none transition placeholder:text-gray-400 focus:border-[var(--color-primary)] focus:ring-0"
-                      type="number"
-                      autoComplete="off"
-                      min="0"
-                      placeholder="180"
-                      value={profile.budgetMax}
-                      onChange={(event) =>
-                        setProfile((prev) => ({ ...prev, budgetMax: event.target.value }))
-                      }
-                    />
-                  </label>
-                </div>
-
-                <div className="flex min-h-10 items-center justify-between gap-2">
-                  <button
-                    className="rounded-xl border border-[var(--color-primary)] bg-[var(--color-secondary)] px-4 py-2.5 font-bold text-[var(--color-primary)] transition hover:bg-[var(--color-secondary)]"
-                    type="button"
-                    onClick={() => transitionToStep(1)}
-                  >
-                    Retour
-                  </button>
-
-                  {isStepTwoValid ? (
-                    <button
-                      className="rounded-xl bg-[var(--color-primary)] px-4 py-3 font-bold text-[var(--color-secondary)] transition active:translate-y-px"
-                      type="submit"
-                    >
-                      Créer mon compte
-                    </button>
-                  ) : (
-                    <p className="text-xs font-bold [color:var(--color-primary)]">
-                      Complétez tous les champs.
-                    </p>
-                  )}
-                </div>
-              </>
-            )}
-            </div>
+              {isSubmitting ? "Création..." : "Créer mon compte"}
+            </button>
           </form>
 
           <div className="flex flex-wrap items-center gap-2 text-sm [color:var(--color-primary)]">
