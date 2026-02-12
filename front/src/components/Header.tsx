@@ -4,6 +4,9 @@ export default function Header() {
   const searchParams = new URLSearchParams(globalThis.window?.location.search ?? "");
   const currentQuery = searchParams.get("q")?.trim() ?? "";
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const connectedName = sessionStorage.getItem("auth_name")?.trim() ?? "";
+  const isConnected = connectedName !== "";
+  const profileLetter = connectedName.charAt(0).toUpperCase() || "U";
 
   useEffect(() => {
     const searchInput = searchInputRef.current;
@@ -71,21 +74,48 @@ export default function Header() {
           </div>
         </form>
 
-        <div className="flex overflow-hidden rounded-full border border-[var(--color-primary)]">
+        {isConnected ? (
           <a
-            href="/login"
-            className="px-4 py-2 text-sm font-semibold [color:var(--color-primary)] [background:var(--color-secondary)] transition hover:bg-gray-50"
+            href="/profil"
+            className="grid h-10 w-10 place-items-center rounded-full border border-[var(--color-primary)] bg-[var(--color-primary)] [color:var(--color-secondary)]"
+            aria-label="Profil utilisateur"
+            title="Profil"
           >
-            Connexion
+            <span className="relative">
+              <ProfileIcon className="h-5 w-5" />
+              <span className="absolute -bottom-2 -right-2 rounded-full bg-[var(--color-secondary)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--color-primary)]">
+                {profileLetter}
+              </span>
+            </span>
           </a>
-          <a
-            href="/register"
-            className="border-l border-[var(--color-primary)] px-4 py-2 text-sm font-semibold [color:var(--color-secondary)] [background:var(--color-primary)] transition hover:brightness-110"
-          >
-            Inscription
-          </a>
-        </div>
+        ) : (
+          <div className="flex overflow-hidden rounded-full border border-[var(--color-primary)]">
+            <a
+              href="/login"
+              className="px-4 py-2 text-sm font-semibold [color:var(--color-primary)] [background:var(--color-secondary)] transition hover:bg-gray-50"
+            >
+              Connexion
+            </a>
+            <a
+              href="/register"
+              className="border-l border-[var(--color-primary)] px-4 py-2 text-sm font-semibold [color:var(--color-secondary)] [background:var(--color-primary)] transition hover:brightness-110"
+            >
+              Inscription
+            </a>
+          </div>
+        )}
       </div>
     </header>
+  );
+}
+
+type ProfileIconProps = Readonly<{ className?: string }>;
+
+function ProfileIcon({ className = "h-4 w-4" }: ProfileIconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 20c0-4 3.5-7 8-7s8 3 8 7" />
+    </svg>
   );
 }
