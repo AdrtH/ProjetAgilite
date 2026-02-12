@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { mockProducts, type Product } from "../data/products";
 
 const levelLabelMap: Record<string, string> = {
@@ -17,6 +17,21 @@ const categoryLabelMap: Record<string, string> = {
 
 type SortOption = "relevance" | "price-asc" | "price-desc" | "name-asc";
 
+type ApiProduct = {
+  id: string;
+  sports: string[];
+  levels: string[];
+  name: string;
+  price: string | number;
+  card_image?: string | null;
+};
+
+type ApiSport = {
+  key: string;
+  name: string;
+};
+
+const mockById = new Map(mockProducts.map((product) => [product.id, product] as const));
 const allSports = Array.from(
   new Set(mockProducts.flatMap((product) => product.sports)),
 ).sort((left, right) => left.localeCompare(right, "fr"));
@@ -37,26 +52,70 @@ export default function ProductsPage() {
   const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>("relevance");
 
-  const sports = allSports;
+  const [apiProducts, setApiProducts] = useState<Product[]>(mockProducts);
+  const [totalProductsCount, setTotalProductsCount] = useState(mockProducts.length);
+  const [sportOptions, setSportOptions] = useState<Array<{ key: string; name: string }>>(
+    allSports.map((sport) => ({ key: sport, name: sport })),
+  );
+  const latestRequestIdRef = useRef(0);
+
+  const sports = useMemo(
+    () => sportOptions.map((sport) => sport.key),
+    [sportOptions],
+  );
+  const sportNameByKey = useMemo(
+    () =>
+      Object.fromEntries(
+        sportOptions.map((sport) => [sport.key, toSentenceCase(sport.name)]),
+      ) as Record<string, string>,
+    [sportOptions],
+  );
   const categories = allCategories;
   const levels = allLevels;
+
   const normalizedQuery = query.trim().toLowerCase();
+
+  useEffect(() => {
+    const fetchSports = async () => {
+      try {
+        const response = await fetch("/api/sports");
+        if (!response.ok) {
+          throw new Error("sports");
+        }
+
+        const rows = (await response.json()) as ApiSport[];
+        if (rows.length === 0) {
+          return;
+        }
+
+        setSportOptions(
+          rows
+            .map((row) => ({ key: row.key, name: row.name }))
+            .sort((left, right) => left.name.localeCompare(right.name, "fr")),
+        );
+      } catch {
+        // Keep fallback sport list from local mock dataset.
+      }
+    };
+
+    void fetchSports();
+  }, []);
 
   useEffect(() => {
     const normalizedText = normalizeSearchText(query);
 
     if (!normalizedText) {
-      setSelectedSport("ALL");
-      setSelectedCategory("ALL");
-      setSelectedLevels([]);
+      setSelectedSport((previous) => (previous === "ALL" ? previous : "ALL"));
+      setSelectedCategory((previous) => (previous === "ALL" ? previous : "ALL"));
+      setSelectedLevels((previous) => (previous.length === 0 ? previous : []));
       return;
     }
 
     const matchedSport =
-      allSports.find((sport) => normalizedText.includes(normalizeSearchText(sport))) ?? "ALL";
+      sports.find((sport) => normalizedText.includes(normalizeSearchText(sport))) ?? "ALL";
 
     const matchedCategory =
-      allCategories.find((category) => {
+      categories.find((category) => {
         const normalizedCategory = normalizeSearchText(category);
         const normalizedCategoryLabel = normalizeSearchText(categoryLabelMap[category] ?? category);
 
@@ -66,7 +125,7 @@ export default function ProductsPage() {
         );
       }) ?? "ALL";
 
-    const matchedLevels = allLevels.filter((level) => {
+    const matchedLevels = levels.filter((level) => {
       const normalizedLevel = normalizeSearchText(level);
       const normalizedLevelLabel = normalizeSearchText(levelLabelMap[level] ?? level);
 
@@ -75,17 +134,65 @@ export default function ProductsPage() {
       );
     });
 
-    setSelectedSport(matchedSport);
-    setSelectedCategory(matchedCategory);
-    setSelectedLevels(matchedLevels);
-  }, [query]);
+    setSelectedSport((previous) => (previous === matchedSport ? previous : matchedSport));
+    setSelectedCategory((previous) =>
+      previous === matchedCategory ? previous : matchedCategory,
+    );
+    setSelectedLevels((previous) =>
+      areArraysEqual(previous, matchedLevels) ? previous : matchedLevels,
+    );
+  }, [categories, levels, query, sports]);
+
+  useEffect(() => {
+    const requestId = latestRequestIdRef.current + 1;
+    latestRequestIdRef.current = requestId;
+
+    const fetchFilteredProducts = async () => {
+      const levelsToQuery = selectedLevels.length > 0 ? selectedLevels : [null];
+
+      try {
+        const requests = levelsToQuery.map(async (level) => {
+          const params = new URLSearchParams();
+          if (selectedSport !== "ALL") {
+            params.set("sport", selectedSport);
+          }
+          if (level) {
+            params.set("level", level);
+          }
+
+          const url = params.toString() ? `/api/products?${params.toString()}` : "/api/products";
+          const response = await fetch(url);
+
+          if (!response.ok) {
+            throw new Error("products");
+          }
+
+          return (await response.json()) as ApiProduct[];
+        });
+
+        const resolved = await Promise.all(requests);
+        if (requestId !== latestRequestIdRef.current) {
+          return;
+        }
+
+        const merged = resolved.flat();
+        const normalized = normalizeApiProducts(merged);
+        setApiProducts(normalized);
+        if (selectedSport === "ALL" && selectedLevels.length === 0) {
+          setTotalProductsCount(normalized.length);
+        }
+      } catch {
+        // Keep previous successful payload if request fails.
+      }
+    };
+
+    void fetchFilteredProducts();
+  }, [selectedLevels, selectedSport]);
 
   const filteredProducts = useMemo(() => {
-    const filtered = mockProducts.filter((product) => {
-      const matchesSport =
-        selectedSport === "ALL" || product.sports.includes(selectedSport);
-      const matchesCategory =
-        selectedCategory === "ALL" || product.category === selectedCategory;
+    const filtered = apiProducts.filter((product) => {
+      const matchesSport = selectedSport === "ALL" || product.sports.includes(selectedSport);
+      const matchesCategory = selectedCategory === "ALL" || product.category === selectedCategory;
       const matchesLevel =
         selectedLevels.length === 0 ||
         selectedLevels.some((level) => product.levels.includes(level));
@@ -99,6 +206,7 @@ export default function ProductsPage() {
         product.description,
         product.category,
         ...product.sports,
+        ...product.sports.map((sport) => sportNameByKey[sport] ?? sport),
         ...product.levels.map((level) => levelLabelMap[level] ?? level),
       ]
         .join(" ")
@@ -129,11 +237,22 @@ export default function ProductsPage() {
         return left.name.localeCompare(right.name, "fr");
       }
 
-      return getRelevanceScore(right, normalizedQuery) - getRelevanceScore(left, normalizedQuery);
+      return (
+        getRelevanceScore(right, normalizedQuery, sportNameByKey) -
+        getRelevanceScore(left, normalizedQuery, sportNameByKey)
+      );
     });
 
     return sorted;
-  }, [normalizedQuery, selectedCategory, selectedLevels, selectedSport, sortBy]);
+  }, [
+    apiProducts,
+    normalizedQuery,
+    selectedCategory,
+    selectedLevels,
+    selectedSport,
+    sortBy,
+    sportNameByKey,
+  ]);
 
   const resetFilters = () => {
     setQuery("");
@@ -187,12 +306,12 @@ export default function ProductsPage() {
                       active={selectedSport === "ALL"}
                       onClick={() => setSelectedSport("ALL")}
                     />
-                    {sports.map((sport) => (
+                    {sportOptions.map((sport) => (
                       <FilterChip
-                        key={sport}
-                        label={sport}
-                        active={selectedSport === sport}
-                        onClick={() => setSelectedSport(sport)}
+                        key={sport.key}
+                        label={toSentenceCase(sport.name)}
+                        active={selectedSport === sport.key}
+                        onClick={() => setSelectedSport(sport.key)}
                       />
                     ))}
                   </div>
@@ -241,7 +360,7 @@ export default function ProductsPage() {
               <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] [color:var(--color-primary)]">
                   {filteredProducts.length} resultat{filteredProducts.length > 1 ? "s" : ""} sur{" "}
-                  {mockProducts.length}
+                  {totalProductsCount}
                 </p>
 
                 <div className="relative w-full md:w-44">
@@ -334,7 +453,7 @@ export default function ProductsPage() {
                               key={`${product.id}-sport-${sport}`}
                               className="rounded-full border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-1 text-xs font-semibold text-[var(--color-primary)]"
                             >
-                              {sport}
+                              {sportNameByKey[sport] ?? sport}
                             </span>
                           ))}
                         </div>
@@ -371,7 +490,34 @@ export default function ProductsPage() {
   );
 }
 
-function getRelevanceScore(product: Product, normalizedQuery: string): number {
+function normalizeApiProducts(rows: ApiProduct[]): Product[] {
+  const deduped = new Map<string, Product>();
+
+  rows.forEach((row) => {
+    const fallback = mockById.get(row.id);
+    const parsedPrice =
+      typeof row.price === "number" ? row.price : Number.parseFloat(String(row.price));
+
+    deduped.set(row.id, {
+      id: row.id,
+      category: fallback?.category ?? "MATERIEL",
+      sports: row.sports,
+      levels: row.levels,
+      name: row.name,
+      description: fallback?.description ?? "",
+      price: Number.isFinite(parsedPrice) ? parsedPrice : fallback?.price ?? 0,
+      images: fallback?.images ?? (row.card_image ? [row.card_image] : []),
+    });
+  });
+
+  return Array.from(deduped.values());
+}
+
+function getRelevanceScore(
+  product: Product,
+  normalizedQuery: string,
+  sportNameByKey: Record<string, string>,
+): number {
   let score = 0;
   const name = product.name.toLowerCase();
   const description = product.description.toLowerCase();
@@ -386,7 +532,11 @@ function getRelevanceScore(product: Product, normalizedQuery: string): number {
     score += 2;
   }
 
-  if (product.sports.some((sport) => sport.toLowerCase().includes(normalizedQuery))) {
+  if (
+    product.sports.some((sport) =>
+      (sportNameByKey[sport] ?? sport).toLowerCase().includes(normalizedQuery),
+    )
+  ) {
     score += 3;
   }
 
@@ -414,6 +564,23 @@ function normalizeSearchText(value: string): string {
     .replace(/\p{Diacritic}/gu, "")
     .toLowerCase()
     .trim();
+}
+
+function areArraysEqual(left: string[], right: string[]): boolean {
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  return left.every((value, index) => value === right[index]);
+}
+
+function toSentenceCase(value: string): string {
+  const normalized = value.trim().toLowerCase();
+  if (normalized.length === 0) {
+    return value;
+  }
+
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 }
 
 type FilterChipProps = Readonly<{
