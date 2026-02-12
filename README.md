@@ -54,6 +54,12 @@ Le back est disponible sur `http://127.0.0.1:8000`.
 
 La docs swagger est disponible sur `http://127.0.0.1:8000/docs`.
 
+Des tests sont disponibles:
+
+```bash
+uv run manage.py test
+```
+
 ## Front-end (React + Vite)
 
 Ouvrir un second terminal, puis:
