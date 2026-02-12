@@ -26,6 +26,7 @@ type ApiProduct = {
   name: string;
   price: string | number;
   card_image?: string | null;
+  stock_count?: number | null;
 };
 
 export default function ProductDetailsPage({ productId }: ProductDetailsPageProps) {
@@ -147,6 +148,15 @@ export default function ProductDetailsPage({ productId }: ProductDetailsPageProp
               <span className="rounded-full border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-1 text-xs font-semibold uppercase tracking-wide [color:var(--color-primary)]">
                 Ref: {product.id}
               </span>
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
+                  (product.stockCount ?? 0) > 0
+                    ? "bg-emerald-100 text-emerald-800"
+                    : "bg-red-100 text-red-700"
+                }`}
+              >
+                Stock: {Math.max(0, product.stockCount ?? 0)}
+              </span>
             </div>
             <p className="rounded-[2px] bg-[#f2e933] px-2.5 py-1 text-2xl font-black leading-none text-black">
               {formatPrice(product.price)}
@@ -209,6 +219,10 @@ function normalizeApiProduct(row: ApiProduct): Product {
     description: fallback?.description ?? "",
     price: Number.isFinite(parsedPrice) ? parsedPrice : fallback?.price ?? 0,
     images: fallback?.images ?? (row.card_image ? [row.card_image] : []),
+    stockCount:
+      typeof row.stock_count === "number" && Number.isFinite(row.stock_count)
+        ? row.stock_count
+        : fallback?.stockCount,
   };
 }
 

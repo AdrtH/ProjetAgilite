@@ -38,6 +38,7 @@ type ApiProduct = {
   name: string;
   price: string | number;
   card_image?: string | null;
+  stock_count?: number | null;
 };
 
 type ApiSport = {
@@ -705,6 +706,16 @@ export default function ProductsPage() {
                         </p>
                       </div>
 
+                      <p
+                        className={`mt-3 inline-flex w-fit rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${
+                          (product.stockCount ?? 1) > 0
+                            ? "bg-emerald-100 text-emerald-800"
+                            : "bg-red-100 text-red-700"
+                        }`}
+                      >
+                        {(product.stockCount ?? 1) > 0 ? "En stock" : "Rupture de stock"}
+                      </p>
+
                       <h2 className="mt-3 text-2xl leading-tight text-[var(--color-primary)] [font-family:'Decathlon Sans','Segoe UI',Tahoma,sans-serif]">
                         {product.name}
                       </h2>
@@ -850,6 +861,10 @@ function normalizeApiProducts(rows: ApiProduct[]): Product[] {
       description: fallback?.description ?? "",
       price: Number.isFinite(parsedPrice) ? parsedPrice : fallback?.price ?? 0,
       images: fallback?.images ?? (row.card_image ? [row.card_image] : []),
+      stockCount:
+        typeof row.stock_count === "number" && Number.isFinite(row.stock_count)
+          ? row.stock_count
+          : fallback?.stockCount,
     });
   });
 
