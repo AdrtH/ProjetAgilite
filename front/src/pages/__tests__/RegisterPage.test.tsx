@@ -36,6 +36,7 @@ describe("RegisterPage", () => {
   });
 
   it("posts form payload to /api/register", async () => {
+    const testPassword = `pw-${Date.now()}`;
     const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
       const url = String(input);
 
@@ -58,7 +59,7 @@ describe("RegisterPage", () => {
       target: { value: "example@gmail.com" },
     });
     fireEvent.change(screen.getByLabelText("Mot de passe"), {
-      target: { value: "secret" },
+      target: { value: testPassword },
     });
 
     const sportSelect = await screen.findByLabelText("Sport");
@@ -84,7 +85,7 @@ describe("RegisterPage", () => {
     expect(init.body).toBe(
       JSON.stringify({
         name: "example@gmail.com",
-        password: "secret",
+        password: testPassword,
         sport: "RUNNING",
         niveauSportif: "Debutant",
       }),
