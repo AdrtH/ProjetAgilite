@@ -123,7 +123,7 @@ export default function App() {
                   href="/register"
                   className="rounded-full border border-[var(--color-primary)] bg-[var(--color-secondary)] px-6 py-3 text-sm font-semibold [color:var(--color-primary)]"
                 >
-                  Je m&apos;inscrit
+                  Inscription
                 </a>
               </div>
             </div>

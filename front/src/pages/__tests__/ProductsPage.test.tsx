@@ -49,7 +49,7 @@ describe("ProductsPage", () => {
 
   it("requests backend with sport query param when a sport is selected", async () => {
     const calledUrls: string[] = [];
-    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+    vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
       const url = getUrl(input);
       calledUrls.push(url);
 
