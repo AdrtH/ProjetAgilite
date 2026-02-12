@@ -136,3 +136,32 @@ def put_user(request, name: str, payload: UserEdit):
         
     u.update(**modifications)
     return "Success"
+
+@api.get("/user/:name")
+def get_user(request, name: str):
+    u = User.objects.filter(username=name).first()
+    if u is None:
+        return JsonResponse({"error": "Utilisateur non existant"}, status=404)
+    return JsonResponse({
+        "id": u.id,
+        "name": u.username,
+        "sport": u.sportsPratique,
+        "level": u.niveauSportif
+    }, status=200)
+
+@api.put("/user/:name")
+def put_user(request, name: str, payload: UserEdit):
+    u = User.objects.filter(username=name)
+    if not u:
+        return JsonResponse({"error": "Utilisateur non existant"}, status=404)
+    
+    modifications = dict()
+    if payload.name:
+        modifications |= {"username": payload.name}
+    if payload.sport:
+        modifications |= {"sportsPratique": payload.sport}
+    if payload.level:
+        modifications |= {"niveauSportif": payload.level}
+        
+    u.update(**modifications)
+    return "Success"
