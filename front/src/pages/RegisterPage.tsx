@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const highlights = [
   "Créez votre espace pour enregistrer vos préférences sportives.",
@@ -7,6 +7,23 @@ const highlights = [
 ];
 
 const levelOptions = ["Debutant", "Intermediaire", "Confirme", "Expert"];
+const fallbackSports = [
+  "BADMINTON",
+  "BASKETBALL",
+  "YOGA",
+  "NATATION",
+  "MUSCULATION",
+  "CYCLISME",
+  "FOOTBALL",
+  "RANDONNEE",
+  "RUNNING",
+  "TENNIS",
+];
+
+type ApiSport = {
+  key: string;
+  name: string;
+};
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
@@ -17,6 +34,36 @@ export default function RegisterPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [sportOptions, setSportOptions] = useState<Array<{ key: string; name: string }>>(
+    fallbackSports.map((sport) => ({ key: sport, name: toSentenceCase(sport) })),
+  );
+
+  useEffect(() => {
+    const fetchSports = async () => {
+      try {
+        const response = await fetch("/api/sports");
+        if (!response.ok) {
+          throw new Error("sports");
+        }
+
+        const rows = (await response.json()) as ApiSport[];
+        if (rows.length === 0) {
+          return;
+        }
+
+        setSportOptions(
+          rows.map((row) => ({
+            key: row.key,
+            name: toSentenceCase(row.name),
+          })),
+        );
+      } catch {
+        // Keep fallback sport list.
+      }
+    };
+
+    void fetchSports();
+  }, []);
 
   const isFormValid = useMemo(() => {
     return (
@@ -139,16 +186,22 @@ export default function RegisterPage() {
 
             <label className="grid gap-1.5">
               <span className="text-xs font-bold">Sport</span>
-              <input
+              <select
                 className="w-full rounded-xl border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-2.5 text-[var(--color-primary)] outline-none transition placeholder:text-gray-400 focus:border-[var(--color-primary)] focus:ring-0"
-                type="text"
-                autoComplete="off"
-                placeholder="Running"
                 value={form.sport}
                 onChange={(event) =>
                   setForm((prev) => ({ ...prev, sport: event.target.value }))
                 }
-              />
+              >
+                <option value="" disabled>
+                  Selectionner un sport
+                </option>
+                {sportOptions.map((sport) => (
+                  <option key={sport.key} value={sport.key}>
+                    {sport.name}
+                  </option>
+                ))}
+              </select>
             </label>
 
             <label className="grid gap-1.5">
@@ -200,4 +253,13 @@ export default function RegisterPage() {
       </div>
     </main>
   );
+}
+
+function toSentenceCase(value: string): string {
+  const normalized = value.trim().toLowerCase();
+  if (normalized.length === 0) {
+    return value;
+  }
+
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 }
