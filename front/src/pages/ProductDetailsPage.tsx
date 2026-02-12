@@ -227,7 +227,6 @@ function normalizeApiProduct(row: ApiProduct): Product {
         : fallback?.stockCount,
   };
 }
-
 function formatPrice(price: number, language: "fr" | "en"): string {
   return new Intl.NumberFormat(language === "fr" ? "fr-FR" : "en-US", {
     style: "currency",
