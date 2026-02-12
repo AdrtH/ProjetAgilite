@@ -7,6 +7,7 @@ export type Product = {
   description: string;
   price: number;
   images: string[];
+  stockCount?: number;
 };
 
 const seededProducts: Omit<Product, "images">[] = [

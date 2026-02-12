@@ -39,7 +39,7 @@ export default function LoginPage() {
     }
 
     if (response.ok) {
-      return;
+      return payload.name;
     }
 
     const body = (await response.json().catch(() => null)) as
@@ -105,8 +105,10 @@ export default function LoginPage() {
               setIsSubmitting(true);
 
               try {
-                await submitLogin();
+                const connectedName = await submitLogin();
+                sessionStorage.setItem("auth_name", connectedName);
                 setSuccessMessage("Connexion validee.");
+                window.location.pathname = "/profil";
               } catch (error) {
                 const message =
                   error instanceof Error ? error.message : "Erreur lors de la connexion.";
