@@ -63,6 +63,6 @@ def login(request,payload:LoginInput):
         if payload.name==i.username:
             if(check_password(payload.password,i.password)):
                 return JsonResponse({'bravo : ' : i.id},status=200)
-            else:return JsonResponse({'error : ' :'utilisateurs ou mot de passe non valide1'},status=400)
-    return JsonResponse({'error : ' : 'utilisateurs ou mot de passe non valide2'},status=400)
+            else:return JsonResponse({'error : ' :'utilisateurs ou mot de passe non valide'},status=400)
+    return JsonResponse({'error : ' : 'utilisateurs ou mot de passe non valide'},status=400)
 

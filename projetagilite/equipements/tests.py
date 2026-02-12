@@ -190,4 +190,33 @@ class TestPostRegister(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), {'error': 'Utilisateur existant'})
 
+class TestLogin(TestCase):
+    def test_login_successful(self):
+        user = User.objects.create_user(username="eve")
+        user.set_password("apagnan")
+        user.save()
+        response=self.client.post("/login",json.dumps({
+            "name":"eve",
+            "password":"apagnan"
+        }),content_type="applications/json")
+        self.assertEqual(response.status_code,200)
 
+    def test_login_failed(self):
+        user = User.objects.create_user(username="eve")
+        user.set_password("apagnan")
+        user.save()
+        response=self.client.post("/login",json.dumps({
+            "name":"eve",
+            "password":"2pagnan"
+        }),content_type="applications/json")
+        self.assertEqual(response.status_code,400)
+
+    def test_login_wrong_user(self):
+        user = User.objects.create_user(username="eve")
+        user.set_password("apagnan")
+        user.save()
+        response=self.client.post("/login",json.dumps({
+            "name":"MACRON_EXPLOSION",
+            "password":"apagnan"
+        }),content_type="applications/json")
+        self.assertEqual(response.status_code,400)
