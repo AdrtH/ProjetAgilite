@@ -5,6 +5,8 @@ from equipements.models import Product, Sport,User
 from ninja import NinjaAPI,Schema
 from django.contrib.auth.hashers import check_password
 import json
+from typing import Optional
+
 api = NinjaAPI()
 
 class UserInput(Schema):
@@ -16,6 +18,11 @@ class UserInput(Schema):
 class LoginInput(Schema):
     name :str
     password:str
+
+class UserEdit(Schema):
+    name: Optional[str] = None
+    sport: Optional[str] = None
+    level: Optional[str] = None
 
 def product_to_response(product):
     return {
@@ -102,3 +109,19 @@ def get_user(request, name: str):
         "level": u.niveauSportif
     }, status=200)
 
+@api.put("/user/:name")
+def put_user(request, name: str, payload: UserEdit):
+    u = User.objects.filter(username=name)
+    if not u:
+        return JsonResponse({"error": "Utilisateur non existant"}, status=404)
+    
+    modifications = dict()
+    if payload.name:
+        modifications |= {"username": payload.name}
+    if payload.sport:
+        modifications |= {"sportsPratique": payload.sport}
+    if payload.level:
+        modifications |= {"niveauSportif": payload.level}
+        
+    u.update(**modifications)
+    return "Success"
