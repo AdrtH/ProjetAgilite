@@ -6,7 +6,7 @@ import json
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from equipements.models import Product,User
-
+from django.contrib.auth.hashers import make_password
 # Create your tests here.
 
 class ProductModelTest(TestCase):
@@ -189,3 +189,5 @@ class TestPostRegister(TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), {'error': 'Utilisateur existant'})
+
+

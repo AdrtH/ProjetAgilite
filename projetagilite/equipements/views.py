@@ -3,7 +3,8 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 from equipements.models import Product, Sport,User
 from ninja import NinjaAPI,Schema
-
+from django.contrib.auth.hashers import check_password
+import json
 api = NinjaAPI()
 
 class UserInput(Schema):
@@ -11,6 +12,10 @@ class UserInput(Schema):
     password:str
     sport:str
     niveauSportif:str
+
+class LoginInput(Schema):
+    name :str
+    password:str
 
 # Create your views here.
 @api.get("/products")
@@ -46,6 +51,18 @@ def post_register(request,payload:UserInput):
     for i in known_user:
         if payload.name==i.username:
             return JsonResponse({'error': 'Utilisateur existant'}, status=400)
-    nouvel_user = User.objects.create(username=payload.name,sportsPratique=payload.sport,niveauSportif=payload.niveauSportif,password=payload.password)
+    nouvel_user = User.objects.create(username=payload.name,sportsPratique=payload.sport,niveauSportif=payload.niveauSportif)
+    nouvel_user.set_password(payload.password)
+    nouvel_user.save()
     return 'success'
-()
+
+@api.post("/login")
+def login(request,payload:LoginInput):
+    known_user=User.objects.all()
+    for i in known_user:
+        if payload.name==i.username:
+            if(check_password(payload.password,i.password)):
+                return JsonResponse({'bravo : ' : i.id},status=200)
+            else:return JsonResponse({'error : ' :'utilisateurs ou mot de passe non valide1'},status=400)
+    return JsonResponse({'error : ' : 'utilisateurs ou mot de passe non valide2'},status=400)
+
